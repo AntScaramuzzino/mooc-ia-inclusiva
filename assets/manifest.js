@@ -171,5 +171,6 @@ window.MOOC_MANIFEST = {
       ]
     }
   ],
-  "hasBibliografia": true
+  "hasBibliografia": true,
+  "hasQuizFinale": true
 };

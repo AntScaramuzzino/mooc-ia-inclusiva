@@ -648,68 +648,9 @@ h2.learn-card-header .headerlink { display: none; }
   justify-content: center;
   cursor: zoom-out;
 }
-.slide-lightbox-img {
-  max-width: 88vw;
-  max-height: 92vh;
-  border-radius: var(--c-radius-md);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  cursor: default;
-}
-.slide-lb-nav {
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 52px;
-  height: 52px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  font-size: 2rem;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease;
-}
-.slide-lb-nav:hover { background: rgba(255, 255, 255, 0.3); }
-.slide-lb-nav:disabled { opacity: 0.25; cursor: default; }
-.slide-lb-prev { left: 2vw; }
-.slide-lb-next { right: 2vw; }
-.slide-lb-close {
-  position: fixed;
-  top: 18px;
-  right: 22px;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  font-size: 1.8rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.slide-lb-close:hover { background: rgba(255, 255, 255, 0.3); }
-.slide-lb-counter {
-  position: fixed;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 500;
-  background: rgba(0, 0, 0, 0.45);
-  padding: 5px 14px;
-  border-radius: 999px;
-}
-@media (max-width: 600px) {
-  .slide-lb-nav { width: 44px; height: 44px; font-size: 1.6rem; }
-  .slide-lb-prev { left: 6px; }
-  .slide-lb-next { right: 6px; }
-  .slide-lightbox-img { max-width: 96vw; }
+.slide-lightbox img {
+  max-width: 95vw;
+  max-height: 95vh;
 }
 
 /* ============ GLOSSARIO ============ */
@@ -992,49 +933,116 @@ h2.learn-card-header .headerlink { display: none; }
   .module-nav a { width: 100%; text-align: center; }
 }
 
-/* ============ DIMENSIONE CARATTERI ============ */
-/* Scala il testo del contenuto della pagina (i figli usano em e seguono) */
-.md-content .md-typeset {
-  font-size: calc(0.8rem * var(--mooc-font-scale, 1));
+/* ============ QUIZ FINALE — GATE / LUCCHETTO ============ */
+.quiz-gate { max-width: 720px; margin: 1.6em auto; }
+.quiz-gate .gate-locked,
+.quiz-gate .gate-unlocked {
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--c-radius-md);
+  padding: 2.4em 2em;
+  text-align: center;
+}
+.quiz-gate .gate-unlocked { display: none; }
+.quiz-gate.unlocked .gate-locked { display: none; }
+.quiz-gate.unlocked .gate-unlocked { display: block; }
+
+.lock-icon, .unlock-icon {
+  font-size: 4em;
+  line-height: 1;
+  margin-bottom: 0.4em;
+  filter: grayscale(20%);
+}
+.unlock-icon { animation: bounce 0.6s ease; }
+@keyframes bounce {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.mooc-fontsize {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-right: 4px;
-}
-.mooc-fontsize__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 30px;
-  padding: 0 6px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: currentColor;
-  font-size: 0.85rem;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.mooc-fontsize__btn:hover { background: rgba(255, 255, 255, 0.15); }
-.mooc-fontsize__label {
-  min-width: 38px;
+.quiz-gate h2 {
+  margin: 0.4em 0 0.8em 0;
+  font-size: 1.5em;
+  color: var(--c-text);
   text-align: center;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: currentColor;
-  opacity: 0.85;
-  cursor: pointer;
-  user-select: none;
 }
-.mooc-fontsize__label:hover { opacity: 1; }
-@media (max-width: 480px) {
-  .mooc-fontsize__label { display: none; }
+.gate-locked p, .gate-locked ul { text-align: left; }
+
+.gate-progress {
+  margin: 1.8em 0;
+  background: var(--c-bg-card-soft);
+  padding: 1em 1.2em;
+  border-radius: var(--c-radius-sm);
+}
+.gate-progress-bar {
+  height: 10px;
+  background: white;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.gate-progress-fill {
+  height: 100%;
+  background: var(--c-primary);
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.gate-progress-stats {
+  margin-top: 0.6em;
+  font-size: 0.9em;
+  color: var(--c-text-muted);
+  font-weight: 600;
+}
+
+.gate-missing {
+  text-align: left;
+  list-style: none;
+  padding: 0;
+  margin: 1em 0;
+}
+.gate-missing li {
+  padding: 0.5em 0.9em;
+  margin: 0.3em 0;
+  background: var(--c-bg-card-soft);
+  border-radius: var(--c-radius-sm);
+  font-size: 0.92em;
+  border-left: 3px solid #cf222e;
+}
+.gate-missing li.done {
+  border-left-color: var(--c-success);
+  background: var(--c-success-bg);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.gate-missing li::before {
+  content: "○ ";
+  color: #cf222e;
+  font-weight: bold;
+  margin-right: 0.4em;
+}
+.gate-missing li.done::before {
+  content: "✓ ";
+  color: var(--c-success);
+}
+
+.gate-unlocked p, .gate-unlocked ul { text-align: left; }
+.gate-unlocked strong { color: var(--c-primary); }
+
+.gate-cta { text-align: center; margin: 2em 0 1em 0; }
+.gate-button {
+  font-size: 1.1em !important;
+  padding: 0.85em 2em !important;
+}
+
+/* Nav link "Quiz finale" con icona lucchetto */
+.md-nav__link[href*="quiz-finale"]::before,
+.mooc-mod-link[href*="quiz-finale"]::before {
+  content: "🔒";
+  margin-right: 0.4em;
+  font-size: 0.95em;
+}
+body[data-quiz-unlocked="true"] .md-nav__link[href*="quiz-finale"]::before {
+  content: "🎓";
 }
 
 /* ============ PRINT ============ */

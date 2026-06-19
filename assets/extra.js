@@ -182,6 +182,18 @@
       nav.appendChild(li);
     });
 
+    // Quiz finale (con stato lucchetto/sbloccato)
+    if (manifest.hasQuizFinale) {
+      // Calcola se sbloccato (tutti i moduli completed)
+      const allDone = manifest.modules.every(m => {
+        const p = progress[m.slug] || {};
+        return !!p.completed;
+      });
+      const qLabel = (allDone ? '🎓 ' : '🔒 ') + 'Quiz finale';
+      const qItem = topItem(qLabel, prefix + 'quiz-finale.html', {'data-mooc-skip': 'true'});
+      if (!allDone) qItem.style.opacity = '0.7';
+      nav.appendChild(qItem);
+    }
     // Bibliografia & Informazioni
     if (manifest.hasBibliografia) {
       nav.appendChild(topItem('Bibliografia', prefix + 'bibliografia.html', {'data-mooc-skip': 'true'}));
@@ -379,74 +391,15 @@
       }
       if (prev) prev.addEventListener('click', () => { if (idx > 0) { idx--; show(idx); } });
       if (next) next.addEventListener('click', () => { if (idx < total - 1) { idx++; show(idx); } });
-      // ---- Lightbox navigabile (zoom con avanti/indietro) ----
-      function openLightbox(startIndex) {
-        let li = startIndex;
+      imgs.forEach(im => im.addEventListener('click', () => {
         const lb = document.createElement('div');
         lb.className = 'slide-lightbox';
-
         const big = document.createElement('img');
-        big.className = 'slide-lightbox-img';
-
-        const btnPrev = document.createElement('button');
-        btnPrev.className = 'slide-lb-nav slide-lb-prev';
-        btnPrev.type = 'button';
-        btnPrev.setAttribute('aria-label', 'Slide precedente');
-        btnPrev.innerHTML = '‹';
-
-        const btnNext = document.createElement('button');
-        btnNext.className = 'slide-lb-nav slide-lb-next';
-        btnNext.type = 'button';
-        btnNext.setAttribute('aria-label', 'Slide successiva');
-        btnNext.innerHTML = '›';
-
-        const btnClose = document.createElement('button');
-        btnClose.className = 'slide-lb-close';
-        btnClose.type = 'button';
-        btnClose.setAttribute('aria-label', 'Chiudi');
-        btnClose.innerHTML = '×';
-
-        const counter = document.createElement('div');
-        counter.className = 'slide-lb-counter';
-
-        function render() {
-          big.src = imgs[li].src;
-          counter.textContent = (li + 1) + ' / ' + total;
-          btnPrev.disabled = li === 0;
-          btnNext.disabled = li === total - 1;
-          // mantieni il carosello allineato alla slide visualizzata
-          idx = li;
-          show(li);
-        }
-        function goPrev() { if (li > 0) { li--; render(); } }
-        function goNext() { if (li < total - 1) { li++; render(); } }
-        function close() {
-          document.removeEventListener('keydown', onKey);
-          lb.remove();
-        }
-        function onKey(e) {
-          if (e.key === 'ArrowLeft') goPrev();
-          else if (e.key === 'ArrowRight') goNext();
-          else if (e.key === 'Escape') close();
-        }
-
-        btnPrev.addEventListener('click', e => { e.stopPropagation(); goPrev(); });
-        btnNext.addEventListener('click', e => { e.stopPropagation(); goNext(); });
-        btnClose.addEventListener('click', e => { e.stopPropagation(); close(); });
-        big.addEventListener('click', e => e.stopPropagation());
-        lb.addEventListener('click', close); // clic sullo sfondo chiude
-        document.addEventListener('keydown', onKey);
-
-        lb.appendChild(btnPrev);
+        big.src = im.src;
         lb.appendChild(big);
-        lb.appendChild(btnNext);
-        lb.appendChild(counter);
-        lb.appendChild(btnClose);
+        lb.addEventListener('click', () => lb.remove());
         document.body.appendChild(lb);
-        render();
-      }
-
-      imgs.forEach((im, n) => im.addEventListener('click', () => openLightbox(n)));
+      }));
       car.addEventListener('keydown', e => {
         if (e.key === 'ArrowLeft') prev && prev.click();
         if (e.key === 'ArrowRight') next && next.click();
@@ -609,70 +562,75 @@
     }
   }
 
-  // ============ DIMENSIONE CARATTERI ============
-  const FONT_KEY = 'mooc_font_scale';
-  const FONT_MIN = 0.85, FONT_MAX = 1.5, FONT_STEP = 0.1;
+  // ============ QUIZ FINALE GATE ============
+  function initQuizGate() {
+    const gate = document.getElementById('quiz-gate');
+    if (!gate) return;
+    const manifest = window.MOOC_MANIFEST;
+    if (!manifest || !manifest.modules) return;
 
-  function getFontScale() {
-    const v = parseFloat(localStorage.getItem(FONT_KEY));
-    return isNaN(v) ? 1 : Math.min(FONT_MAX, Math.max(FONT_MIN, v));
-  }
-  function applyFontScale(scale) {
-    document.documentElement.style.setProperty('--mooc-font-scale', scale);
-    try { localStorage.setItem(FONT_KEY, String(scale)); } catch (e) {}
-    const lbl = document.querySelector('.mooc-fontsize__label');
-    if (lbl) lbl.textContent = Math.round(scale * 100) + '%';
-  }
-  function initFontSize() {
-    applyFontScale(getFontScale());  // applica sempre la preferenza salvata
-    if (document.querySelector('.mooc-fontsize')) return;  // già inserito
+    const progress = getProgress();
+    const modules = manifest.modules;
+    let completati = 0;
+    const missing = [];
 
-    const palette = document.querySelector('[data-md-component="palette"]');
-    const host = palette ? palette.parentNode : document.querySelector('.md-header__inner');
-    if (!host) return;
+    modules.forEach((mod, idx) => {
+      const modProg = progress[mod.slug] || {};
+      const isCompleted = !!modProg.completed;
+      if (isCompleted) {
+        completati++;
+      } else {
+        // Cerco quale modulo manca e cosa serve
+        const items = modProg.items || {};
+        const itemsTot = (mod.items || []).length;
+        const itemsDone = Object.keys(items).length;
+        const titolo = mod.title.replace(/^Modulo\s+\d+\s*[-—–:]\s*/, '');
+        missing.push({
+          idx: idx + 1,
+          title: titolo,
+          itemsDone,
+          itemsTot,
+        });
+      }
+    });
 
-    const wrap = document.createElement('div');
-    wrap.className = 'mooc-fontsize';
-    wrap.setAttribute('role', 'group');
-    wrap.setAttribute('aria-label', 'Dimensione del testo');
+    const totale = modules.length;
+    const pct = totale > 0 ? Math.round(completati / totale * 100) : 0;
+    const isUnlocked = completati >= totale;
 
-    const dec = document.createElement('button');
-    dec.type = 'button';
-    dec.className = 'mooc-fontsize__btn';
-    dec.title = 'Riduci dimensione testo';
-    dec.setAttribute('aria-label', 'Riduci dimensione testo');
-    dec.textContent = 'A−';
+    // Aggiorna progress bar
+    const fill = document.getElementById('gate-progress-fill');
+    if (fill) fill.style.width = pct + '%';
 
-    const label = document.createElement('span');
-    label.className = 'mooc-fontsize__label';
-    label.title = 'Ripristina dimensione testo';
-    label.textContent = Math.round(getFontScale() * 100) + '%';
+    const stats = document.getElementById('gate-progress-stats');
+    if (stats) stats.textContent = completati + ' di ' + totale + ' moduli completati (' + pct + '%)';
 
-    const inc = document.createElement('button');
-    inc.type = 'button';
-    inc.className = 'mooc-fontsize__btn';
-    inc.title = 'Aumenta dimensione testo';
-    inc.setAttribute('aria-label', 'Aumenta dimensione testo');
-    inc.textContent = 'A+';
-
-    function step(delta) {
-      const next = Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round((getFontScale() + delta) * 100) / 100));
-      applyFontScale(next);
+    // Aggiorna lista missing
+    const missingEl = document.getElementById('gate-missing');
+    if (missingEl) {
+      if (missing.length === 0) {
+        missingEl.innerHTML = '<li class="done">Tutte le attività sono completate!</li>';
+      } else {
+        missingEl.innerHTML = missing.map(m =>
+          '<li><strong>Modulo ' + m.idx + '</strong> — ' + m.title +
+          ' <span style="color:#888;font-size:0.85em">(' + m.itemsDone + '/' + m.itemsTot + ' attività)</span></li>'
+        ).join('');
+      }
     }
-    dec.addEventListener('click', () => step(-FONT_STEP));
-    inc.addEventListener('click', () => step(FONT_STEP));
-    label.addEventListener('click', () => applyFontScale(1));  // clic = reset 100%
 
-    wrap.appendChild(dec);
-    wrap.appendChild(label);
-    wrap.appendChild(inc);
-    if (palette) host.insertBefore(wrap, palette);
-    else host.appendChild(wrap);
+    // Sblocco
+    if (isUnlocked) {
+      gate.classList.add('unlocked');
+      document.body.setAttribute('data-quiz-unlocked', 'true');
+    } else {
+      gate.classList.remove('unlocked');
+      document.body.removeAttribute('data-quiz-unlocked');
+    }
   }
+
 
   // ============ INIT ============
   function init() {
-    initFontSize();
     buildCustomSidebar();
     initQuiz();
     initFlashcards();
@@ -684,6 +642,7 @@
     initHomepageProgress();
     initReadingTime();
     initModuleNav();
+    initQuizGate();
     refreshSidebar();
   }
 
