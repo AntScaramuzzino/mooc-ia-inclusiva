@@ -14,6 +14,16 @@
 (function () {
   const STORAGE_KEY = 'mooc_progress_v2';
 
+  // ============ CONFIG LOGIN/SYNC ============
+  // ID OAuth Web Client (creato in Google Cloud Console)
+  // URL della web app Apps Script di backend (deploy "Anonymous")
+  // Se entrambi sono vuoti, login disabilitato — il MOOC funziona solo in localStorage.
+  const MOOC_AUTH = (window.MOOC_AUTH || {});
+  const OAUTH_CLIENT_ID = MOOC_AUTH.clientId || '';
+  const BACKEND_URL = MOOC_AUTH.backendUrl || '';
+  const USER_KEY = 'mooc_user';
+  const TOKEN_KEY = 'mooc_idToken';
+
   // Mapping fra slug della pagina e slug del modulo (dal path)
   function currentModuleSlug() {
     const path = location.pathname.replace(/\/$/, '');
@@ -36,11 +46,13 @@
     const p = getProgress();
     p[moduleSlug] = p[moduleSlug] || { items: {} };
     p[moduleSlug].items = p[moduleSlug].items || {};
-    if (p[moduleSlug].items[itemId]) return;  // già fatto
+    if (p[moduleSlug].items[itemId]) return;
     p[moduleSlug].items[itemId] = { done: true, ts: Date.now() };
+    p[moduleSlug].ts = Date.now();
     saveProgress(p);
     refreshSidebar();
     refreshModuleCompletion(moduleSlug);
+    if (typeof scheduleSync === 'function') scheduleSync();
   }
   function setModuleCompleted(slug, done) {
     const p = getProgress();
@@ -49,6 +61,7 @@
     p[slug].ts = Date.now();
     saveProgress(p);
     refreshSidebar();
+    if (typeof scheduleSync === 'function') scheduleSync();
   }
   function getModuleItems(slug) {
     const p = getProgress();
@@ -629,8 +642,167 @@
   }
 
 
+  // ============ LOGIN GOOGLE + SYNC PROGRESS ============
+  function isAuthConfigured() { return OAUTH_CLIENT_ID && BACKEND_URL; }
+
+  function getStoredUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
+    catch (e) { return null; }
+  }
+  function setStoredUser(u) {
+    if (u) localStorage.setItem(USER_KEY, JSON.stringify(u));
+    else localStorage.removeItem(USER_KEY);
+  }
+
+  function decodeJwtPayload(token) {
+    try {
+      const part = token.split('.')[1];
+      return JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    } catch (e) { return null; }
+  }
+
+  function loadGoogleIdentityScript(cb) {
+    if (window.google && window.google.accounts && window.google.accounts.id) return cb();
+    if (document.getElementById('gis-script')) {
+      document.getElementById('gis-script').addEventListener('load', cb);
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = 'gis-script';
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true; s.defer = true;
+    s.onload = cb;
+    document.head.appendChild(s);
+  }
+
+  function initGoogleAuth() {
+    if (!isAuthConfigured()) return;
+    loadGoogleIdentityScript(() => {
+      google.accounts.id.initialize({
+        client_id: OAUTH_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false,
+      });
+      renderAuthUI();
+    });
+  }
+
+  function handleCredentialResponse(response) {
+    const idToken = response.credential;
+    const payload = decodeJwtPayload(idToken);
+    if (!payload) { log_('login_failed: no payload'); return; }
+    const user = { email: payload.email, name: payload.name || payload.email, picture: payload.picture || '' };
+    localStorage.setItem(TOKEN_KEY, idToken);
+    setStoredUser(user);
+    renderAuthUI();
+    // Carica progress dal backend e fonde con locale (prende il più recente per modulo)
+    syncFromBackend();
+  }
+
+  function logout() {
+    localStorage.removeItem(TOKEN_KEY);
+    setStoredUser(null);
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.disableAutoSelect();
+    }
+    renderAuthUI();
+  }
+
+  function renderAuthUI() {
+    let box = document.getElementById('mooc-auth-box');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'mooc-auth-box';
+      box.className = 'mooc-auth-box';
+      // Insert into header
+      const header = document.querySelector('.md-header__inner') || document.querySelector('.md-header') || document.body;
+      header.appendChild(box);
+    }
+    const user = getStoredUser();
+    if (user) {
+      box.innerHTML =
+        '<div class="auth-user" title="' + esc_(user.email) + '">' +
+        (user.picture ? '<img src="' + esc_(user.picture) + '" alt="">' : '<span class="auth-avatar-fallback">' + esc_((user.name || '?').charAt(0)) + '</span>') +
+        '<span class="auth-name">' + esc_(user.name) + '</span>' +
+        '<button class="auth-logout" title="Esci">×</button>' +
+        '</div>';
+      box.querySelector('.auth-logout').addEventListener('click', logout);
+    } else if (isAuthConfigured()) {
+      box.innerHTML = '<button class="auth-signin" title="Sincronizza il progresso fra dispositivi">🔐 Accedi con Google</button>';
+      box.querySelector('.auth-signin').addEventListener('click', () => {
+        google.accounts.id.prompt();  // mostra One Tap; in fallback, init renderButton
+      });
+      // Render anche il bottone classico Google (più affidabile)
+      const btnHost = document.createElement('div');
+      btnHost.id = 'gis-button-host';
+      box.appendChild(btnHost);
+      google.accounts.id.renderButton(btnHost, { theme: 'outline', size: 'small', shape: 'pill', text: 'signin' });
+    }
+  }
+
+  // ============ SYNC ============
+  let syncTimer = null;
+  function scheduleSync() {
+    if (!isAuthConfigured() || !getStoredUser()) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncToBackend, 1200);  // debounce 1.2s
+  }
+
+  async function syncToBackend() {
+    const user = getStoredUser();
+    const idToken = localStorage.getItem(TOKEN_KEY);
+    if (!user || !idToken) return;
+    try {
+      const r = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },  // evita CORS preflight
+        body: JSON.stringify({ idToken, action: 'save', progress: getProgress() }),
+      });
+      const data = await r.json();
+      if (!data.ok) { log_('sync_save_err: ' + (data.error || '?')); }
+    } catch (e) { log_('sync_save_net: ' + e); }
+  }
+
+  async function syncFromBackend() {
+    const idToken = localStorage.getItem(TOKEN_KEY);
+    if (!idToken) return;
+    try {
+      const r = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ idToken, action: 'load' }),
+      });
+      const data = await r.json();
+      if (!data.ok) { log_('sync_load_err: ' + (data.error || '?')); return; }
+      const remote = data.progress || {};
+      const local = getProgress();
+      // Merge: per ogni modulo, prendi il timestamp più recente
+      const merged = { ...local };
+      Object.keys(remote).forEach(slug => {
+        const rt = remote[slug] && remote[slug].ts || 0;
+        const lt = local[slug] && local[slug].ts || 0;
+        if (rt >= lt) merged[slug] = remote[slug];
+      });
+      saveProgress(merged);
+      refreshSidebar();
+      // Aggiorna anche eventuali stati visivi della pagina corrente
+      const gate = document.getElementById('quiz-gate');
+      if (gate) initQuizGate();
+    } catch (e) { log_('sync_load_net: ' + e); }
+  }
+
+  function esc_(s) { return String(s||'').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function log_(msg) { if (window.console) console.log('[MOOC]', msg); }
+
+  // Hook: dopo ogni cambio progress, schedula sync
+  const _origSet = setItemCompleted;
+  // Avvolge setItemCompleted per chiamare scheduleSync dopo l'aggiornamento
+  // (sostituisco la reference visibile a sé stessa rebinding via closure)
+
+
   // ============ INIT ============
   function init() {
+    initGoogleAuth();
     buildCustomSidebar();
     initQuiz();
     initFlashcards();

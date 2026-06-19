@@ -1045,6 +1045,45 @@ body[data-quiz-unlocked="true"] .md-nav__link[href*="quiz-finale"]::before {
   content: "🎓";
 }
 
+/* ============ AUTH BOX HEADER ============ */
+.mooc-auth-box {
+  position: fixed;
+  top: 10px; right: 16px;
+  z-index: 9999;
+  display: flex; align-items: center; gap: 8px;
+}
+.mooc-auth-box .auth-user {
+  display: flex; align-items: center; gap: 8px;
+  background: white; border: 1px solid var(--c-border);
+  border-radius: 999px; padding: 4px 12px 4px 4px;
+  box-shadow: var(--c-shadow-sm);
+  font-size: 0.85em;
+}
+.mooc-auth-box .auth-user img,
+.mooc-auth-box .auth-avatar-fallback {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--c-primary); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85em;
+  flex-shrink: 0;
+}
+.mooc-auth-box .auth-user img { object-fit: cover; }
+.mooc-auth-box .auth-name {
+  max-width: 160px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-weight: 500; color: var(--c-text);
+}
+.mooc-auth-box .auth-logout {
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--c-text-muted); font-size: 1.4em;
+  line-height: 1; padding: 0 4px; margin-left: 4px;
+}
+.mooc-auth-box .auth-logout:hover { color: #c81f1f; }
+.mooc-auth-box .auth-signin {
+  display: none;  /* nascondiamo, usiamo il bottone Google ufficiale */
+}
+#gis-button-host { display: inline-block; }
+
 /* ============ PRINT ============ */
 @media print {
   .md-sidebar, .md-header, .md-tabs, .module-completion, .learn-footer { display: none !important; }
