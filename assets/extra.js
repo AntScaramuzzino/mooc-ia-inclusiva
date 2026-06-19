@@ -13,16 +13,7 @@
 
 (function () {
   const STORAGE_KEY = 'mooc_progress_v2';
-
-  // ============ CONFIG LOGIN/SYNC ============
-  // ID OAuth Web Client (creato in Google Cloud Console)
-  // URL della web app Apps Script di backend (deploy "Anonymous")
-  // Se entrambi sono vuoti, login disabilitato — il MOOC funziona solo in localStorage.
-  const MOOC_AUTH = (window.MOOC_AUTH || {});
-  const OAUTH_CLIENT_ID = MOOC_AUTH.clientId || '';
-  const BACKEND_URL = MOOC_AUTH.backendUrl || '';
-  const USER_KEY = 'mooc_user';
-  const TOKEN_KEY = 'mooc_idToken';
+  const USER_KEY = 'mooc_user_v1';
 
   // Mapping fra slug della pagina e slug del modulo (dal path)
   function currentModuleSlug() {
@@ -52,7 +43,6 @@
     saveProgress(p);
     refreshSidebar();
     refreshModuleCompletion(moduleSlug);
-    if (typeof scheduleSync === 'function') scheduleSync();
   }
   function setModuleCompleted(slug, done) {
     const p = getProgress();
@@ -61,7 +51,6 @@
     p[slug].ts = Date.now();
     saveProgress(p);
     refreshSidebar();
-    if (typeof scheduleSync === 'function') scheduleSync();
   }
   function getModuleItems(slug) {
     const p = getProgress();
@@ -404,73 +393,7 @@
       }
       if (prev) prev.addEventListener('click', () => { if (idx > 0) { idx--; show(idx); } });
       if (next) next.addEventListener('click', () => { if (idx < total - 1) { idx++; show(idx); } });
-      // ---- Lightbox navigabile (zoom con avanti/indietro) ----
-      function openLightbox(startIndex) {
-        let li = startIndex;
-        const lb = document.createElement('div');
-        lb.className = 'slide-lightbox';
-
-        const big = document.createElement('img');
-        big.className = 'slide-lightbox-img';
-
-        const btnPrev = document.createElement('button');
-        btnPrev.className = 'slide-lb-nav slide-lb-prev';
-        btnPrev.type = 'button';
-        btnPrev.setAttribute('aria-label', 'Slide precedente');
-        btnPrev.innerHTML = '\u2039';
-
-        const btnNext = document.createElement('button');
-        btnNext.className = 'slide-lb-nav slide-lb-next';
-        btnNext.type = 'button';
-        btnNext.setAttribute('aria-label', 'Slide successiva');
-        btnNext.innerHTML = '\u203a';
-
-        const btnClose = document.createElement('button');
-        btnClose.className = 'slide-lb-close';
-        btnClose.type = 'button';
-        btnClose.setAttribute('aria-label', 'Chiudi');
-        btnClose.innerHTML = '\u00d7';
-
-        const counter = document.createElement('div');
-        counter.className = 'slide-lb-counter';
-
-        function render() {
-          big.src = imgs[li].src;
-          counter.textContent = (li + 1) + ' / ' + total;
-          btnPrev.disabled = li === 0;
-          btnNext.disabled = li === total - 1;
-          idx = li;
-          show(li);
-        }
-        function goPrev() { if (li > 0) { li--; render(); } }
-        function goNext() { if (li < total - 1) { li++; render(); } }
-        function close() {
-          document.removeEventListener('keydown', onKey);
-          lb.remove();
-        }
-        function onKey(e) {
-          if (e.key === 'ArrowLeft') goPrev();
-          else if (e.key === 'ArrowRight') goNext();
-          else if (e.key === 'Escape') close();
-        }
-
-        btnPrev.addEventListener('click', e => { e.stopPropagation(); goPrev(); });
-        btnNext.addEventListener('click', e => { e.stopPropagation(); goNext(); });
-        btnClose.addEventListener('click', e => { e.stopPropagation(); close(); });
-        big.addEventListener('click', e => e.stopPropagation());
-        lb.addEventListener('click', close);
-        document.addEventListener('keydown', onKey);
-
-        lb.appendChild(btnPrev);
-        lb.appendChild(big);
-        lb.appendChild(btnNext);
-        lb.appendChild(counter);
-        lb.appendChild(btnClose);
-        document.body.appendChild(lb);
-        render();
-      }
-
-      imgs.forEach((im, n) => im.addEventListener('click', () => openLightbox(n)));
+      imgs.forEach((im, n) => im.addEventListener('click', () => openLightbox(imgs, n)));
       car.addEventListener('keydown', e => {
         if (e.key === 'ArrowLeft') prev && prev.click();
         if (e.key === 'ArrowRight') next && next.click();
@@ -478,6 +401,60 @@
       car.setAttribute('tabindex', '0');
       show(0);
     });
+  }
+
+  // ============ LIGHTBOX NAVIGABILE ============
+  function openLightbox(imgs, startIdx) {
+    const total = imgs.length;
+    let cur = startIdx;
+    const lb = document.createElement('div');
+    lb.className = 'slide-lightbox';
+    lb.setAttribute('role', 'dialog');
+    lb.setAttribute('aria-modal', 'true');
+    lb.setAttribute('aria-label', 'Visualizzazione ingrandita slide');
+    lb.tabIndex = -1;
+    lb.innerHTML =
+      '<button class="lightbox-close" aria-label="Chiudi (Esc)" title="Chiudi (Esc)">×</button>' +
+      '<button class="lightbox-prev" aria-label="Slide precedente" title="Precedente (←)">‹</button>' +
+      '<img class="lightbox-img" alt="">' +
+      '<button class="lightbox-next" aria-label="Slide successiva" title="Successiva (→)">›</button>' +
+      '<div class="lightbox-counter" aria-live="polite"><span class="lb-current">1</span> / <span class="lb-total">' + total + '</span></div>';
+    const imgEl = lb.querySelector('.lightbox-img');
+    const lbCur = lb.querySelector('.lb-current');
+    const prevBtn = lb.querySelector('.lightbox-prev');
+    const nextBtn = lb.querySelector('.lightbox-next');
+    const closeBtn = lb.querySelector('.lightbox-close');
+
+    function update() {
+      imgEl.src = imgs[cur].src;
+      imgEl.alt = imgs[cur].alt || ('Slide ' + (cur + 1) + ' di ' + total);
+      lbCur.textContent = (cur + 1).toString();
+      prevBtn.disabled = (cur === 0);
+      nextBtn.disabled = (cur === total - 1);
+    }
+    function go(d) { cur = Math.max(0, Math.min(total - 1, cur + d)); update(); }
+    function close() {
+      document.removeEventListener('keydown', onKey);
+      lb.remove();
+      document.body.classList.remove('lightbox-open');
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+    }
+
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); go(-1); });
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); go(1); });
+    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+    // Click sul backdrop chiude, ma non sull'immagine o sui bottoni
+    lb.addEventListener('click', (e) => { if (e.target === lb) close(); });
+    document.addEventListener('keydown', onKey);
+
+    document.body.appendChild(lb);
+    document.body.classList.add('lightbox-open');
+    lb.focus();
+    update();
   }
 
   // ============ AUDIO (podcast) ============
@@ -697,11 +674,46 @@
       gate.classList.remove('unlocked');
       document.body.removeAttribute('data-quiz-unlocked');
     }
+
+    // Mostra i dati del corsista nella sezione sbloccata
+    const user = getStoredUser();
+    const unlockedDiv = gate.querySelector('.gate-unlocked');
+    if (unlockedDiv) {
+      let userInfo = unlockedDiv.querySelector('.gate-user-info');
+      if (!userInfo) {
+        userInfo = document.createElement('div');
+        userInfo.className = 'gate-user-info';
+        unlockedDiv.insertBefore(userInfo, unlockedDiv.firstChild.nextSibling);
+      }
+      if (user) {
+        userInfo.innerHTML =
+          '<div class="gate-user-card">' +
+            '<strong>Compili come:</strong> ' + esc_(user.name) + ' &lt;' + esc_(user.email) + '&gt;' +
+            (user.school ? ' <span class="gate-user-school">— ' + esc_(user.school) + '</span>' : '') +
+            ' <button type="button" class="gate-user-edit" aria-label="Modifica">✎ modifica</button>' +
+          '</div>' +
+          '<p class="gate-user-note">⚠ Quando compili il form del quiz, usa <strong>esattamente</strong> questi dati ' +
+          '(li trovi anche in alto a destra). Servono per associare il quiz al tuo attestato.</p>';
+        const editBtn = userInfo.querySelector('.gate-user-edit');
+        if (editBtn) editBtn.addEventListener('click', () => openUserPrompt({ edit: true }));
+      } else {
+        userInfo.innerHTML =
+          '<div class="gate-user-card gate-user-missing">' +
+            '⚠ Non hai ancora inserito i tuoi dati. ' +
+            '<button type="button" class="gate-user-edit">Inserisci nome e email →</button>' +
+          '</div>';
+        const editBtn = userInfo.querySelector('.gate-user-edit');
+        if (editBtn) editBtn.addEventListener('click', () => openUserPrompt());
+      }
+    }
   }
 
 
-  // ============ LOGIN GOOGLE + SYNC PROGRESS ============
-  function isAuthConfigured() { return OAUTH_CLIENT_ID && BACKEND_URL; }
+  // ============ SESSIONE LOCALE CORSISTA ============
+  // Al primo accesso, mostra un modale che chiede nome+cognome+email.
+  // I dati sono salvati in localStorage (browser locale) — niente OAuth, niente backend.
+  // Servono per: identificare il corsista in alto a destra, e per pre-compilare
+  // il Quiz finale con i dati corretti (URL params).
 
   function getStoredUser() {
     try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); }
@@ -712,217 +724,185 @@
     else localStorage.removeItem(USER_KEY);
   }
 
-  function decodeJwtPayload(token) {
-    try {
-      const part = token.split('.')[1];
-      return JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
-    } catch (e) { return null; }
+  function isValidEmail(s) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   }
 
-  function loadGoogleIdentityScript(cb) {
-    if (window.google && window.google.accounts && window.google.accounts.id) return cb();
-    if (document.getElementById('gis-script')) {
-      document.getElementById('gis-script').addEventListener('load', cb);
-      return;
+  function openUserPrompt(opts) {
+    const existing = getStoredUser() || {};
+    const isEdit = !!opts && opts.edit;
+    // Modale
+    const overlay = document.createElement('div');
+    overlay.className = 'mooc-user-modal-overlay';
+    overlay.innerHTML =
+      '<div class="mooc-user-modal" role="dialog" aria-modal="true" aria-labelledby="mum-title">' +
+        '<h2 id="mum-title">👋 ' + (isEdit ? 'Modifica i tuoi dati' : 'Benvenutə nel MOOC') + '</h2>' +
+        '<p>Prima di iniziare, inserisci il tuo <strong>nome e cognome</strong> e la tua <strong>email</strong>. ' +
+        'I dati restano <strong>solo nel tuo browser</strong> e vengono usati alla fine per compilare il quiz di certificazione con i tuoi dati corretti.</p>' +
+        '<form id="mum-form" novalidate>' +
+          '<label>Nome e cognome <input type="text" id="mum-name" required minlength="3" autocomplete="name" value="' + esc_(existing.name || '') + '"></label>' +
+          '<label>Email <input type="email" id="mum-email" required autocomplete="email" value="' + esc_(existing.email || '') + '"></label>' +
+          '<label>Scuola (opzionale) <input type="text" id="mum-school" autocomplete="organization" value="' + esc_(existing.school || '') + '"></label>' +
+          '<div class="mum-err" id="mum-err"></div>' +
+          '<div class="mum-actions">' +
+            (isEdit ? '<button type="button" id="mum-cancel">Annulla</button>' : '') +
+            '<button type="submit" id="mum-submit">' + (isEdit ? 'Salva' : 'Inizia il corso →') + '</button>' +
+          '</div>' +
+        '</form>' +
+        '<p class="mum-privacy">Privacy: i dati sono salvati esclusivamente nel localStorage del browser. ' +
+        'Se cambi browser, dispositivo o pulisci la cache, dovrai inserirli di nuovo.</p>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    document.body.classList.add('mooc-modal-open');
+    // Focus
+    setTimeout(() => { const el = document.getElementById('mum-name'); if (el) el.focus(); }, 50);
+
+    function close() {
+      overlay.remove();
+      document.body.classList.remove('mooc-modal-open');
     }
-    const s = document.createElement('script');
-    s.id = 'gis-script';
-    s.src = 'https://accounts.google.com/gsi/client';
-    s.async = true; s.defer = true;
-    s.onload = cb;
-    document.head.appendChild(s);
-  }
 
-  function initGoogleAuth() {
-    if (!isAuthConfigured()) return;
-    loadGoogleIdentityScript(() => {
-      google.accounts.id.initialize({
-        client_id: OAUTH_CLIENT_ID,
-        callback: handleCredentialResponse,
-        auto_select: false,
-      });
-      renderAuthUI();
+    const form = document.getElementById('mum-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('mum-name').value.trim();
+      const email = document.getElementById('mum-email').value.trim();
+      const school = document.getElementById('mum-school').value.trim();
+      const err = document.getElementById('mum-err');
+      if (name.length < 3) { err.textContent = 'Inserisci nome e cognome (almeno 3 caratteri).'; return; }
+      if (!isValidEmail(email)) { err.textContent = 'Email non valida.'; return; }
+      setStoredUser({ name, email, school, since: Date.now() });
+      close();
+      renderUserBadge();
+      // Re-render quiz finale link se siamo sulla pagina del gate
+      const gate = document.getElementById('quiz-gate');
+      if (gate) initQuizGate();
     });
+
+    const cancelBtn = document.getElementById('mum-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', close);
   }
 
-  function handleCredentialResponse(response) {
-    const idToken = response.credential;
-    const payload = decodeJwtPayload(idToken);
-    if (!payload) { log_('login_failed: no payload'); return; }
-    const user = { email: payload.email, name: payload.name || payload.email, picture: payload.picture || '' };
-    localStorage.setItem(TOKEN_KEY, idToken);
-    setStoredUser(user);
-    renderAuthUI();
-    // Carica progress dal backend e fonde con locale (prende il più recente per modulo)
-    syncFromBackend();
-  }
-
-  function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    setStoredUser(null);
-    if (window.google && google.accounts && google.accounts.id) {
-      google.accounts.id.disableAutoSelect();
-    }
-    renderAuthUI();
-  }
-
-  function renderAuthUI() {
+  function renderUserBadge() {
     let box = document.getElementById('mooc-auth-box');
     if (!box) {
       box = document.createElement('div');
       box.id = 'mooc-auth-box';
       box.className = 'mooc-auth-box';
-      // Insert into header
       const header = document.querySelector('.md-header__inner') || document.querySelector('.md-header') || document.body;
       header.appendChild(box);
     }
     const user = getStoredUser();
     if (user) {
+      const initial = (user.name || '?').trim().charAt(0).toUpperCase();
       box.innerHTML =
         '<div class="auth-user" title="' + esc_(user.email) + '">' +
-        (user.picture ? '<img src="' + esc_(user.picture) + '" alt="">' : '<span class="auth-avatar-fallback">' + esc_((user.name || '?').charAt(0)) + '</span>') +
-        '<span class="auth-name">' + esc_(user.name) + '</span>' +
-        '<button class="auth-logout" title="Esci">×</button>' +
+          '<span class="auth-avatar-fallback">' + esc_(initial) + '</span>' +
+          '<span class="auth-name">' + esc_(user.name) + '</span>' +
+          '<button class="auth-edit" title="Modifica i tuoi dati" aria-label="Modifica">✎</button>' +
         '</div>';
-      box.querySelector('.auth-logout').addEventListener('click', logout);
-    } else if (isAuthConfigured()) {
-      box.innerHTML = '<button class="auth-signin" title="Sincronizza il progresso fra dispositivi">🔐 Accedi con Google</button>';
-      box.querySelector('.auth-signin').addEventListener('click', () => {
-        google.accounts.id.prompt();  // mostra One Tap; in fallback, init renderButton
-      });
-      // Render anche il bottone classico Google (più affidabile)
-      const btnHost = document.createElement('div');
-      btnHost.id = 'gis-button-host';
-      box.appendChild(btnHost);
-      google.accounts.id.renderButton(btnHost, { theme: 'outline', size: 'small', shape: 'pill', text: 'signin' });
+      const btn = box.querySelector('.auth-edit');
+      if (btn) btn.addEventListener('click', () => openUserPrompt({ edit: true }));
+    } else {
+      box.innerHTML = '<button class="auth-signin" title="Identificati per il MOOC">👤 Identificati</button>';
+      box.querySelector('.auth-signin').addEventListener('click', () => openUserPrompt());
     }
   }
 
-  // ============ SYNC ============
-  let syncTimer = null;
-  function scheduleSync() {
-    if (!isAuthConfigured() || !getStoredUser()) return;
-    clearTimeout(syncTimer);
-    syncTimer = setTimeout(syncToBackend, 1200);  // debounce 1.2s
-  }
-
-  async function syncToBackend() {
+  function initLocalSession() {
+    renderUserBadge();
+    // Se non c'è ancora un utente, mostra il modale obbligatorio (tranne sulla home)
     const user = getStoredUser();
-    const idToken = localStorage.getItem(TOKEN_KEY);
-    if (!user || !idToken) return;
-    try {
-      const r = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },  // evita CORS preflight
-        body: JSON.stringify({ idToken, action: 'save', progress: getProgress() }),
-      });
-      const data = await r.json();
-      if (!data.ok) { log_('sync_save_err: ' + (data.error || '?')); }
-    } catch (e) { log_('sync_save_net: ' + e); }
-  }
-
-  async function syncFromBackend() {
-    const idToken = localStorage.getItem(TOKEN_KEY);
-    if (!idToken) return;
-    try {
-      const r = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ idToken, action: 'load' }),
-      });
-      const data = await r.json();
-      if (!data.ok) { log_('sync_load_err: ' + (data.error || '?')); return; }
-      const remote = data.progress || {};
-      const local = getProgress();
-      // Merge: per ogni modulo, prendi il timestamp più recente
-      const merged = { ...local };
-      Object.keys(remote).forEach(slug => {
-        const rt = remote[slug] && remote[slug].ts || 0;
-        const lt = local[slug] && local[slug].ts || 0;
-        if (rt >= lt) merged[slug] = remote[slug];
-      });
-      saveProgress(merged);
-      refreshSidebar();
-      // Aggiorna anche eventuali stati visivi della pagina corrente
-      const gate = document.getElementById('quiz-gate');
-      if (gate) initQuizGate();
-    } catch (e) { log_('sync_load_net: ' + e); }
+    if (!user) {
+      // Auto-prompt al primo caricamento, su qualsiasi pagina
+      openUserPrompt();
+    }
   }
 
   function esc_(s) { return String(s||'').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-  function log_(msg) { if (window.console) console.log('[MOOC]', msg); }
 
-  // Hook: dopo ogni cambio progress, schedula sync
-  const _origSet = setItemCompleted;
-  // Avvolge setItemCompleted per chiamare scheduleSync dopo l'aggiornamento
-  // (sostituisco la reference visibile a sé stessa rebinding via closure)
+  // ============ FONT-SIZE TOGGLE (A− / A+) ============
+  const FONT_STEPS = [0.875, 1.0, 1.125, 1.25, 1.4];
+  const FONT_KEY = 'mooc_font_step';
 
-
-  // ============ DIMENSIONE CARATTERI ============
-  const FONT_KEY = 'mooc_font_scale';
-  const FONT_MIN = 0.85, FONT_MAX = 1.5, FONT_STEP = 0.1;
-
-  function getFontScale() {
-    const v = parseFloat(localStorage.getItem(FONT_KEY));
-    return isNaN(v) ? 1 : Math.min(FONT_MAX, Math.max(FONT_MIN, v));
+  function getFontStep() {
+    const raw = parseInt(localStorage.getItem(FONT_KEY) || '1', 10);
+    return Math.max(0, Math.min(FONT_STEPS.length - 1, isNaN(raw) ? 1 : raw));
   }
-  function applyFontScale(scale) {
-    document.documentElement.style.setProperty('--mooc-font-scale', scale);
-    try { localStorage.setItem(FONT_KEY, String(scale)); } catch (e) {}
-    const lbl = document.querySelector('.mooc-fontsize__label');
-    if (lbl) lbl.textContent = Math.round(scale * 100) + '%';
+  function applyFontStep(step) {
+    document.documentElement.style.setProperty('--mooc-font-scale', FONT_STEPS[step]);
+    document.documentElement.setAttribute('data-mooc-font-step', step.toString());
+    localStorage.setItem(FONT_KEY, step.toString());
+    const lbl = document.getElementById('mooc-fs-label');
+    if (lbl) lbl.textContent = Math.round(FONT_STEPS[step] * 100) + '%';
   }
-  function initFontSize() {
-    applyFontScale(getFontScale());
-    if (document.querySelector('.mooc-fontsize')) return;
 
-    const palette = document.querySelector('[data-md-component="palette"]');
-    const host = palette ? palette.parentNode : document.querySelector('.md-header__inner');
-    if (!host) return;
+  function initFontSizeToggle() {
+    if (document.getElementById('mooc-fs-toggle')) return;
+    const host = document.createElement('div');
+    host.id = 'mooc-fs-toggle';
+    host.className = 'mooc-fs-toggle';
+    host.innerHTML =
+      '<button class="fs-btn fs-minus" aria-label="Riduci dimensione testo" title="Riduci testo">A−</button>' +
+      '<span class="fs-label" id="mooc-fs-label">100%</span>' +
+      '<button class="fs-btn fs-plus" aria-label="Aumenta dimensione testo" title="Aumenta testo">A+</button>';
+    const header = document.querySelector('.md-header__inner') || document.querySelector('.md-header') || document.body;
+    header.appendChild(host);
 
-    const wrap = document.createElement('div');
-    wrap.className = 'mooc-fontsize';
-    wrap.setAttribute('role', 'group');
-    wrap.setAttribute('aria-label', 'Dimensione del testo');
+    host.querySelector('.fs-minus').addEventListener('click', () => {
+      const s = getFontStep();
+      if (s > 0) applyFontStep(s - 1);
+    });
+    host.querySelector('.fs-plus').addEventListener('click', () => {
+      const s = getFontStep();
+      if (s < FONT_STEPS.length - 1) applyFontStep(s + 1);
+    });
+    applyFontStep(getFontStep());
+  }
 
-    const dec = document.createElement('button');
-    dec.type = 'button';
-    dec.className = 'mooc-fontsize__btn';
-    dec.title = 'Riduci dimensione testo';
-    dec.setAttribute('aria-label', 'Riduci dimensione testo');
-    dec.textContent = 'A\u2212';
-
-    const label = document.createElement('span');
-    label.className = 'mooc-fontsize__label';
-    label.title = 'Ripristina dimensione testo';
-    label.textContent = Math.round(getFontScale() * 100) + '%';
-
-    const inc = document.createElement('button');
-    inc.type = 'button';
-    inc.className = 'mooc-fontsize__btn';
-    inc.title = 'Aumenta dimensione testo';
-    inc.setAttribute('aria-label', 'Aumenta dimensione testo');
-    inc.textContent = 'A+';
-
-    function step(delta) {
-      const next = Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round((getFontScale() + delta) * 100) / 100));
-      applyFontScale(next);
+  // ============ VIDEOTUTORIAL: tracking visualizzazione ============
+  function initVideotutorial() {
+    const grid = document.querySelector('.videotutorial-grid');
+    if (!grid) return;
+    const moduleSlug = grid.getAttribute('data-modulo');
+    // Quando l'utente clicca/interagisce con un iframe video, segna come completato
+    // Per iframe YouTube non possiamo intercettare il play, ma il click sulla card è un buon proxy.
+    let interacted = 0;
+    const total = grid.querySelectorAll('.vt-card').length;
+    grid.querySelectorAll('.vt-card').forEach(card => {
+      card.addEventListener('click', () => {
+        if (card.__interacted) return;
+        card.__interacted = true;
+        interacted++;
+        // segna completato dopo che ne ha aperto almeno il 50%
+        if (interacted >= Math.max(1, Math.ceil(total * 0.5))) {
+          setItemCompleted(moduleSlug, 'video-tutorial');
+        }
+      }, { capture: true });
+    });
+    // Fallback: dopo 60 secondi di pagina, considera la sezione "vista" se è nel viewport
+    if ('IntersectionObserver' in window) {
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            setTimeout(() => {
+              const r = grid.getBoundingClientRect();
+              if (r.top < window.innerHeight && r.bottom > 0) {
+                setItemCompleted(moduleSlug, 'video-tutorial');
+              }
+            }, 30000);  // 30s nel viewport
+          }
+        });
+      }, { threshold: 0.3 });
+      obs.observe(grid);
     }
-    dec.addEventListener('click', () => step(-FONT_STEP));
-    inc.addEventListener('click', () => step(FONT_STEP));
-    label.addEventListener('click', () => applyFontScale(1));
-
-    wrap.appendChild(dec);
-    wrap.appendChild(label);
-    wrap.appendChild(inc);
-    if (palette) host.insertBefore(wrap, palette);
-    else host.appendChild(wrap);
   }
 
   // ============ INIT ============
   function init() {
-    initFontSize();
-    initGoogleAuth();
+    initLocalSession();
+    initFontSizeToggle();
+    initVideotutorial();
     buildCustomSidebar();
     initQuiz();
     initFlashcards();

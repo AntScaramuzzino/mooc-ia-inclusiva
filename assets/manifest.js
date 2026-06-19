@@ -13,6 +13,10 @@ window.MOOC_MANIFEST = {
           "label": "Guardare · Slide"
         },
         {
+          "id": "video-tutorial",
+          "label": "Vedere · Video tutorial"
+        },
+        {
           "id": "leggere-dispensa",
           "label": "Leggere · Dispensa"
         },
@@ -45,6 +49,10 @@ window.MOOC_MANIFEST = {
         {
           "id": "guardare-slide",
           "label": "Guardare · Slide"
+        },
+        {
+          "id": "video-tutorial",
+          "label": "Vedere · Video tutorial"
         },
         {
           "id": "leggere-dispensa",
@@ -81,6 +89,10 @@ window.MOOC_MANIFEST = {
           "label": "Guardare · Slide"
         },
         {
+          "id": "video-tutorial",
+          "label": "Vedere · Video tutorial"
+        },
+        {
           "id": "leggere-dispensa",
           "label": "Leggere · Dispensa"
         },
@@ -115,6 +127,10 @@ window.MOOC_MANIFEST = {
           "label": "Guardare · Slide"
         },
         {
+          "id": "video-tutorial",
+          "label": "Vedere · Video tutorial"
+        },
+        {
           "id": "leggere-dispensa",
           "label": "Leggere · Dispensa"
         },
@@ -147,6 +163,10 @@ window.MOOC_MANIFEST = {
         {
           "id": "guardare-slide",
           "label": "Guardare · Slide"
+        },
+        {
+          "id": "video-tutorial",
+          "label": "Vedere · Video tutorial"
         },
         {
           "id": "leggere-dispensa",
