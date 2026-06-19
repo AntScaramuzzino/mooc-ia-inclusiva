@@ -404,15 +404,73 @@
       }
       if (prev) prev.addEventListener('click', () => { if (idx > 0) { idx--; show(idx); } });
       if (next) next.addEventListener('click', () => { if (idx < total - 1) { idx++; show(idx); } });
-      imgs.forEach(im => im.addEventListener('click', () => {
+      // ---- Lightbox navigabile (zoom con avanti/indietro) ----
+      function openLightbox(startIndex) {
+        let li = startIndex;
         const lb = document.createElement('div');
         lb.className = 'slide-lightbox';
+
         const big = document.createElement('img');
-        big.src = im.src;
+        big.className = 'slide-lightbox-img';
+
+        const btnPrev = document.createElement('button');
+        btnPrev.className = 'slide-lb-nav slide-lb-prev';
+        btnPrev.type = 'button';
+        btnPrev.setAttribute('aria-label', 'Slide precedente');
+        btnPrev.innerHTML = '\u2039';
+
+        const btnNext = document.createElement('button');
+        btnNext.className = 'slide-lb-nav slide-lb-next';
+        btnNext.type = 'button';
+        btnNext.setAttribute('aria-label', 'Slide successiva');
+        btnNext.innerHTML = '\u203a';
+
+        const btnClose = document.createElement('button');
+        btnClose.className = 'slide-lb-close';
+        btnClose.type = 'button';
+        btnClose.setAttribute('aria-label', 'Chiudi');
+        btnClose.innerHTML = '\u00d7';
+
+        const counter = document.createElement('div');
+        counter.className = 'slide-lb-counter';
+
+        function render() {
+          big.src = imgs[li].src;
+          counter.textContent = (li + 1) + ' / ' + total;
+          btnPrev.disabled = li === 0;
+          btnNext.disabled = li === total - 1;
+          idx = li;
+          show(li);
+        }
+        function goPrev() { if (li > 0) { li--; render(); } }
+        function goNext() { if (li < total - 1) { li++; render(); } }
+        function close() {
+          document.removeEventListener('keydown', onKey);
+          lb.remove();
+        }
+        function onKey(e) {
+          if (e.key === 'ArrowLeft') goPrev();
+          else if (e.key === 'ArrowRight') goNext();
+          else if (e.key === 'Escape') close();
+        }
+
+        btnPrev.addEventListener('click', e => { e.stopPropagation(); goPrev(); });
+        btnNext.addEventListener('click', e => { e.stopPropagation(); goNext(); });
+        btnClose.addEventListener('click', e => { e.stopPropagation(); close(); });
+        big.addEventListener('click', e => e.stopPropagation());
+        lb.addEventListener('click', close);
+        document.addEventListener('keydown', onKey);
+
+        lb.appendChild(btnPrev);
         lb.appendChild(big);
-        lb.addEventListener('click', () => lb.remove());
+        lb.appendChild(btnNext);
+        lb.appendChild(counter);
+        lb.appendChild(btnClose);
         document.body.appendChild(lb);
-      }));
+        render();
+      }
+
+      imgs.forEach((im, n) => im.addEventListener('click', () => openLightbox(n)));
       car.addEventListener('keydown', e => {
         if (e.key === 'ArrowLeft') prev && prev.click();
         if (e.key === 'ArrowRight') next && next.click();
@@ -800,8 +858,70 @@
   // (sostituisco la reference visibile a sé stessa rebinding via closure)
 
 
+  // ============ DIMENSIONE CARATTERI ============
+  const FONT_KEY = 'mooc_font_scale';
+  const FONT_MIN = 0.85, FONT_MAX = 1.5, FONT_STEP = 0.1;
+
+  function getFontScale() {
+    const v = parseFloat(localStorage.getItem(FONT_KEY));
+    return isNaN(v) ? 1 : Math.min(FONT_MAX, Math.max(FONT_MIN, v));
+  }
+  function applyFontScale(scale) {
+    document.documentElement.style.setProperty('--mooc-font-scale', scale);
+    try { localStorage.setItem(FONT_KEY, String(scale)); } catch (e) {}
+    const lbl = document.querySelector('.mooc-fontsize__label');
+    if (lbl) lbl.textContent = Math.round(scale * 100) + '%';
+  }
+  function initFontSize() {
+    applyFontScale(getFontScale());
+    if (document.querySelector('.mooc-fontsize')) return;
+
+    const palette = document.querySelector('[data-md-component="palette"]');
+    const host = palette ? palette.parentNode : document.querySelector('.md-header__inner');
+    if (!host) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'mooc-fontsize';
+    wrap.setAttribute('role', 'group');
+    wrap.setAttribute('aria-label', 'Dimensione del testo');
+
+    const dec = document.createElement('button');
+    dec.type = 'button';
+    dec.className = 'mooc-fontsize__btn';
+    dec.title = 'Riduci dimensione testo';
+    dec.setAttribute('aria-label', 'Riduci dimensione testo');
+    dec.textContent = 'A\u2212';
+
+    const label = document.createElement('span');
+    label.className = 'mooc-fontsize__label';
+    label.title = 'Ripristina dimensione testo';
+    label.textContent = Math.round(getFontScale() * 100) + '%';
+
+    const inc = document.createElement('button');
+    inc.type = 'button';
+    inc.className = 'mooc-fontsize__btn';
+    inc.title = 'Aumenta dimensione testo';
+    inc.setAttribute('aria-label', 'Aumenta dimensione testo');
+    inc.textContent = 'A+';
+
+    function step(delta) {
+      const next = Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round((getFontScale() + delta) * 100) / 100));
+      applyFontScale(next);
+    }
+    dec.addEventListener('click', () => step(-FONT_STEP));
+    inc.addEventListener('click', () => step(FONT_STEP));
+    label.addEventListener('click', () => applyFontScale(1));
+
+    wrap.appendChild(dec);
+    wrap.appendChild(label);
+    wrap.appendChild(inc);
+    if (palette) host.insertBefore(wrap, palette);
+    else host.appendChild(wrap);
+  }
+
   // ============ INIT ============
   function init() {
+    initFontSize();
     initGoogleAuth();
     buildCustomSidebar();
     initQuiz();
