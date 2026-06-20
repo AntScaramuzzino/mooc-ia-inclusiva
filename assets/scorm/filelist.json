@@ -2,6 +2,7 @@
 "files": [
 "01-ia-contesto-educativo/audio.m4a",
 "01-ia-contesto-educativo/index.html",
+"01-ia-contesto-educativo/quiz.html",
 "01-ia-contesto-educativo/risorse/Dispensa_Modulo1_IA_contesto_educativo.docx",
 "01-ia-contesto-educativo/slide/slide-01.png",
 "01-ia-contesto-educativo/slide/slide-02.png",
@@ -20,6 +21,7 @@
 "01-ia-contesto-educativo/slide/slide-15.png",
 "02-framework-didattici/audio.m4a",
 "02-framework-didattici/index.html",
+"02-framework-didattici/quiz.html",
 "02-framework-didattici/risorse/Dispensa_Modulo2_Framework.docx",
 "02-framework-didattici/slide/slide-01.png",
 "02-framework-didattici/slide/slide-02.png",
@@ -37,6 +39,7 @@
 "02-framework-didattici/slide/slide-15.png",
 "03-laboratorio-strumenti/audio.m4a",
 "03-laboratorio-strumenti/index.html",
+"03-laboratorio-strumenti/quiz.html",
 "03-laboratorio-strumenti/risorse/Dispensa_Lab1_Rosarno_G2_24aprile.docx",
 "03-laboratorio-strumenti/slide/slide-01.png",
 "03-laboratorio-strumenti/slide/slide-02.png",
@@ -55,6 +58,7 @@
 "03-laboratorio-strumenti/slide/slide-15.png",
 "04-progettazione-didattica/audio.m4a",
 "04-progettazione-didattica/index.html",
+"04-progettazione-didattica/quiz.html",
 "04-progettazione-didattica/risorse/Dispensa_Modulo3_Progettazione.docx",
 "04-progettazione-didattica/slide/slide-01.png",
 "04-progettazione-didattica/slide/slide-02.png",
@@ -73,6 +77,7 @@
 "04-progettazione-didattica/slide/slide-15.png",
 "05-inclusione-valutazione/audio.m4a",
 "05-inclusione-valutazione/index.html",
+"05-inclusione-valutazione/quiz.html",
 "05-inclusione-valutazione/risorse/Dispensa_Modulo4_Inclusione_Valutazione.docx",
 "05-inclusione-valutazione/slide/slide-01.png",
 "05-inclusione-valutazione/slide/slide-02.png",
@@ -90,8 +95,6 @@
 "05-inclusione-valutazione/slide/slide-14.png",
 "05-inclusione-valutazione/slide/slide-15.png",
 "404.html",
-"DEPLOY.md",
-"README.md",
 "about.html",
 "assets/auth-config.js",
 "assets/beacon-config.js",
@@ -151,5 +154,5 @@
 "sitemap.xml",
 "sitemap.xml.gz"
 ],
-"generated": "2026-06-20T11:06:52.160097"
+"generated": "2026-06-20T12:44:23.793608"
 }
