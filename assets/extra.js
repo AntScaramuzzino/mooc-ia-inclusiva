@@ -763,6 +763,19 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   }
 
+  // Safeguard globale (one-time): blocca QUALUNQUE submit event che dovesse
+  // sfuggire dentro un modale di sessione. Funziona su Edge/Safari/Chrome.
+  if (!window.__moocSubmitGuard) {
+    window.__moocSubmitGuard = true;
+    document.addEventListener('submit', (e) => {
+      if (e.target && e.target.closest && e.target.closest('.mooc-user-modal-overlay')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);  // capture phase
+  }
+
   function openUserPrompt(opts) {
     // Guard: se c'è già un modale aperto, non aprirne un altro
     if (document.body.classList.contains('mooc-modal-open')) return;
@@ -779,16 +792,18 @@
         '<h2 id="mum-title">👋 ' + (isEdit ? 'Modifica i tuoi dati' : 'Benvenutə nel MOOC') + '</h2>' +
         '<p>Prima di iniziare, inserisci il tuo <strong>nome e cognome</strong> e la tua <strong>email</strong>. ' +
         'I dati restano <strong>solo nel tuo browser</strong> e vengono usati alla fine per compilare il quiz di certificazione con i tuoi dati corretti.</p>' +
-        '<form class="mum-form" novalidate>' +
+        // NIENTE <form>: usiamo solo input + bottone type=button per evitare submit
+        // nativi che su Edge bypassano preventDefault (URL ?reload bug).
+        '<div class="mum-form">' +
           '<label>Nome e cognome <input type="text" class="mum-name" required minlength="3" autocomplete="name" value="' + esc_(existing.name || '') + '"></label>' +
           '<label>Email <input type="email" class="mum-email" required autocomplete="email" value="' + esc_(existing.email || '') + '"></label>' +
           '<label>Scuola (opzionale) <input type="text" class="mum-school" autocomplete="organization" value="' + esc_(existing.school || '') + '"></label>' +
-          '<div class="mum-err"></div>' +
+          '<div class="mum-err" aria-live="polite"></div>' +
           '<div class="mum-actions">' +
             (isEdit ? '<button type="button" class="mum-cancel">Annulla</button>' : '') +
-            '<button type="submit" class="mum-submit">' + (isEdit ? 'Salva' : 'Inizia il corso →') + '</button>' +
+            '<button type="button" class="mum-submit">' + (isEdit ? 'Salva' : 'Inizia il corso →') + '</button>' +
           '</div>' +
-        '</form>' +
+        '</div>' +
         '<p class="mum-privacy">Privacy: i dati sono salvati esclusivamente nel localStorage del browser. ' +
         'Se cambi browser, dispositivo o pulisci la cache, dovrai inserirli di nuovo.</p>' +
       '</div>';
@@ -806,18 +821,14 @@
       document.body.classList.remove('mooc-modal-open');
     }
 
-    const form = overlay.querySelector('.mum-form');
-    // Submit handler — uso capture e stopPropagation per evitare interferenze
-    // con eventuali listener globali (es. instant-loading di MkDocs Material).
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    // Submit logico (no form submit nativo — bypass-proof su Edge/Safari)
+    function trySubmit() {
       const name = (overlay.querySelector('.mum-name').value || '').trim();
       const email = (overlay.querySelector('.mum-email').value || '').trim();
       const school = (overlay.querySelector('.mum-school').value || '').trim();
       const err = overlay.querySelector('.mum-err');
-      if (name.length < 3) { err.textContent = 'Inserisci nome e cognome (almeno 3 caratteri).'; return false; }
-      if (!isValidEmail(email)) { err.textContent = 'Email non valida.'; return false; }
+      if (name.length < 3) { err.textContent = 'Inserisci nome e cognome (almeno 3 caratteri).'; return; }
+      if (!isValidEmail(email)) { err.textContent = 'Email non valida.'; return; }
 
       // Salva con verifica: ricontrolla dopo write
       try {
@@ -825,25 +836,44 @@
         const check = getStoredUser();
         if (!check || check.email !== email) {
           err.textContent = 'Errore di salvataggio. Riprova (controlla se localStorage è abilitato).';
-          return false;
+          return;
         }
       } catch (ex) {
         err.textContent = 'Errore di salvataggio: ' + (ex.message || ex);
-        return false;
+        return;
       }
 
       close();
       renderUserBadge();
       const gate = document.getElementById('quiz-gate');
       if (gate) initQuizGate();
-      return false;
+    }
+
+    // Bottone "Inizia / Salva" — click handler diretto, niente form submit
+    const submitBtn = overlay.querySelector('.mum-submit');
+    if (submitBtn) submitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      trySubmit();
     });
 
-    // Bottoni: usano querySelector locale all'overlay
+    // Bottone "Annulla" (solo in edit mode)
     const cancelBtn = overlay.querySelector('.mum-cancel');
     if (cancelBtn) cancelBtn.addEventListener('click', (e) => {
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
       close();
+    });
+
+    // Enter su uno degli input = trigger submit logico (niente form submit nativo)
+    overlay.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          trySubmit();
+        }
+      });
     });
 
     // Anche Esc chiude (solo in edit mode, perché al primo accesso è obbligatorio)
