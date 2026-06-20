@@ -2078,6 +2078,161 @@ body.mooc-modal-open { overflow: hidden; }
 [data-md-color-scheme="slate"] .mooc-pl-actions-sec { border-color: #374151; }
 [data-md-color-scheme="slate"] .mooc-pl-footer { color: #94a3b8; }
 
+/* ============================================================
+   OTTIMIZZAZIONI MOBILE (≤ 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Safe area iOS */
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Content padding ridotto, full-width */
+  .md-content__inner {
+    padding: 1.2em 0.9em 3em 0.9em !important;
+  }
+
+  /* HERO homepage: padding compatto */
+  .gs-hero {
+    margin: -1.2em -0.9em 1.4em -0.9em;
+    padding: 2.4em 1em 2em;
+  }
+  .gs-hero-title { font-size: clamp(1.8em, 8vw, 2.4em); line-height: 1.15; }
+  .gs-hero-sub { font-size: 1.05em; }
+  .gs-hero-desc { font-size: 0.92em; }
+  .gs-hero-cta { flex-direction: column; gap: 8px; }
+  .gs-hero-cta .gs-btn { width: 100%; justify-content: center; padding: 14px 18px; }
+  .gs-hero-chips { gap: 6px; }
+  .gs-chip { font-size: 0.75em; padding: 4px 9px; }
+
+  /* Stats compatte */
+  .gs-stats { gap: 0.6em; margin: 1.6em 0; }
+  .gs-stat { padding: 1.1em 0.6em; }
+  .gs-stat-num { font-size: 1.9em; }
+  .gs-stat-label { font-size: 0.75em; }
+
+  /* Final CTA: bottoni a colonna */
+  .gs-final-cta {
+    margin: 2em -0.9em -3em -0.9em;
+    padding: 2.4em 1em 2.6em;
+  }
+  .gs-final-cta h2 { font-size: 1.5em; }
+  .gs-final-cta-buttons { flex-direction: column; gap: 8px; }
+  .gs-final-cta-buttons .gs-btn { width: 100%; justify-content: center; }
+
+  /* Module cards homepage: padding ridotto */
+  .mooc-module-card { padding: 1.1em 1.1em !important; }
+  .mmc-title { font-size: 1em; }
+  .mmc-summary { font-size: 0.85em; }
+
+  /* Features / Credentials: padding ridotto */
+  .gs-feature { padding: 0.9em 0.9em; }
+  .gs-cred-card { padding: 1.3em 1.1em; }
+  .gs-cred-card h3 { font-size: 1.05em; }
+  .gs-cred-card p { font-size: 0.86em; }
+
+  /* HEADER toolbar: tutto piccolo + name nascosto su <500px (già fatto) */
+  .mooc-toolbar {
+    top: 50px;
+    right: 6px;
+    gap: 4px;
+  }
+  .mooc-fs-toggle { height: 30px; padding: 1px; }
+  .mooc-fs-toggle .fs-btn { width: 26px; height: 26px; }
+  .mooc-fs-toggle .fs-label { min-width: 30px; font-size: 0.68em; }
+  .mooc-auth-box .auth-user { height: 30px; padding: 2px 4px; font-size: 0.78em; }
+  .mooc-auth-box .auth-user img,
+  .mooc-auth-box .auth-avatar-fallback { width: 22px; height: 22px; }
+  .mooc-auth-box .auth-edit, .mooc-auth-box .auth-reset { padding: 3px 5px; font-size: 0.85em; }
+
+  /* Course page header (in modulo) compatto */
+  .course-page-header { padding: 1em 0 0.8em; margin-top: 2.4em; }
+  .cph-title { font-size: 1.5em !important; line-height: 1.2; }
+  .cph-summary { font-size: 0.95em; }
+  .cph-meta { gap: 0.4em; }
+  .cph-meta-item { font-size: 0.82em; padding: 3px 8px; }
+
+  /* Learn cards: padding ridotto */
+  .learn-card-body { padding: 0.9em 0.8em 1em !important; }
+  .learn-card-header { padding: 0.8em 0.9em !important; font-size: 1.05em !important; }
+
+  /* Quiz options: testo + tap target più grandi */
+  .quiz-options label { padding: 0.9em 0.8em; font-size: 0.95em; }
+  .quiz-q-text { font-size: 0.98em; }
+  .quiz-actions { flex-direction: column; gap: 8px; align-items: stretch; }
+  .quiz-actions .learn-btn { width: 100%; padding: 12px; }
+
+  /* Flashcards: dimensione adattata */
+  .flashcards-display { height: 220px; max-width: 100%; }
+  .flashcard-face { padding: 1em 1.2em; font-size: 0.95em; }
+  .flashcard-front { font-size: 1.3em; }
+  .flashcard-front .flashcard-text { font-size: 1.15em; }
+  .flashcards-controls { gap: 6px; }
+  .flashcards-controls .learn-btn { padding: 8px 12px; font-size: 0.82em; }
+
+  /* Slide stage più compatto */
+  .slide-stage { min-height: 220px; aspect-ratio: 16/9; }
+  .slide-controls { flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .slide-controls .learn-btn { padding: 8px 12px; font-size: 0.82em; }
+
+  /* Glossario popup: full-width su mobile */
+  .g-popup { width: calc(100vw - 24px); max-width: none; left: 12px !important; }
+
+  /* Audio player: full width */
+  audio { width: 100% !important; }
+
+  /* Prompt Lab drawer: full-width */
+  .mooc-pl-drawer {
+    width: calc(100vw - 16px);
+    max-width: none;
+    right: 8px; bottom: 8px;
+  }
+  .mooc-pl-fab { bottom: 14px; right: 14px; padding: 12px 14px; }
+  .mooc-pl-ta { min-height: 120px; }
+
+  /* Modale login: full-screen e con safe-area */
+  .mooc-user-modal-overlay { padding: 0; align-items: flex-start; }
+  .mooc-user-modal {
+    border-radius: 0;
+    max-width: 100%;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: max(24px, env(safe-area-inset-top, 24px)) 22px 22px;
+  }
+  .mooc-user-modal h2 { font-size: 1.3em; }
+  .mooc-user-modal input { padding: 12px; font-size: 16px; /* evita zoom iOS */ }
+  .mooc-user-modal .mum-actions { flex-direction: column-reverse; gap: 8px; }
+  .mooc-user-modal .mum-actions button { width: 100%; padding: 13px; }
+
+  /* Video tutorial: meta ancora più compatti su mobile (1 col) */
+  .vt-title { font-size: 0.95em; }
+  .vt-desc { font-size: 0.85em; -webkit-line-clamp: 3; }
+
+  /* Quiz gate (finale) */
+  .quiz-gate { margin: 1em 0; padding: 1.2em 1em; }
+  .quiz-gate h2 { font-size: 1.3em; }
+
+  /* Tabelle scroll orizzontale invece di overflow */
+  .md-typeset table { display: block; overflow-x: auto; max-width: 100%; }
+}
+
+/* SCHERMI MOLTO PICCOLI (≤ 380px) */
+@media (max-width: 380px) {
+  .gs-hero-title { font-size: 1.7em; }
+  .cph-title { font-size: 1.3em !important; }
+  .mooc-fs-toggle .fs-label { display: none; }
+  .mooc-auth-box .auth-name { display: none; }
+  .mmc-eyebrow { font-size: 0.7em; }
+}
+
+/* INPUT FONT SIZE — su iOS Safari, input < 16px scatena auto-zoom.
+   Forziamo a 16px su mobile per tutti gli input/textarea del MOOC. */
+@media (max-width: 768px) {
+  input[type="text"], input[type="email"], input[type="search"],
+  textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* ============ PRINT ============ */
 @media print {
   .md-sidebar, .md-header, .md-tabs, .module-completion, .learn-footer { display: none !important; }
