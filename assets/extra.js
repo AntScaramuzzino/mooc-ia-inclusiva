@@ -15,6 +15,12 @@
   const STORAGE_KEY = 'mooc_progress_v2';
   const USER_KEY = 'mooc_user_v1';
 
+  // ============ ACTIVITY BEACON (verso Apps Script) ============
+  // Se MOOC_BEACON_URL è impostato (es. via assets/beacon-config.js),
+  // ogni setItemCompleted manda un POST per registrare l'attività su Sheet.
+  // Senza URL il MOOC continua a funzionare solo in locale (honor system).
+  const BEACON_URL = (window.MOOC_BEACON_URL || '').trim();
+
   // Mapping fra slug della pagina e slug del modulo (dal path)
   function currentModuleSlug() {
     const path = location.pathname.replace(/\/$/, '');
@@ -43,6 +49,8 @@
     saveProgress(p);
     refreshSidebar();
     refreshModuleCompletion(moduleSlug);
+    // Beacon: spedisci l'evento al backend (best-effort)
+    logActivityBeacon(moduleSlug, itemId);
   }
   function setModuleCompleted(slug, done) {
     const p = getProgress();
@@ -859,6 +867,40 @@
   }
 
   function esc_(s) { return String(s||'').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  // ============ BEACON: registra l'attività sul backend ============
+  // Best-effort: se manca BEACON_URL o l'utente non si è identificato, skip.
+  // Dedup-locale: se la stessa (modulo, item) è già stata inviata, salta.
+  const _beaconSent = {};
+  function logActivityBeacon(moduleSlug, itemId) {
+    if (!BEACON_URL) return;
+    const user = getStoredUser();
+    if (!user || !user.email) return;
+    const key = (user.email + '|' + moduleSlug + '|' + itemId).toLowerCase();
+    if (_beaconSent[key]) return;
+    _beaconSent[key] = true;
+    const payload = {
+      action: 'log_activity',
+      email: user.email,
+      name: user.name || '',
+      school: user.school || '',
+      modulo: moduleSlug,
+      activity_id: itemId,
+      ts: Date.now(),
+      user_agent: (navigator.userAgent || '').substring(0, 200),
+    };
+    try {
+      fetch(BEACON_URL, {
+        method: 'POST',
+        // text/plain evita il preflight CORS — Apps Script non risponde a OPTIONS
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify(payload),
+        // no-cors: il MOOC non legge la risposta (best-effort)
+        mode: 'no-cors',
+        keepalive: true,
+      }).catch(() => { /* silenzioso */ });
+    } catch (e) { /* silenzioso */ }
+  }
 
   // ============ FONT-SIZE TOGGLE (A− / A+) ============
   const FONT_STEPS = [0.875, 1.0, 1.125, 1.25, 1.4];
