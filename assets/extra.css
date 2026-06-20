@@ -812,17 +812,18 @@ body.lightbox-open { overflow: hidden; }
 }
 
 /* ============ VIDEOTUTORIAL GRID ============ */
+/* SEMPRE 3 colonne su tutti gli schermi non-mobile.
+   Le card si stringono fino a min 140px (≈ 3 cards in ~440px disponibili)
+   prima di passare a 1 colonna su mobile. */
 .videotutorial-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));   /* sempre 3 colonne su desktop */
-  gap: 1em;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8em;
   margin: 1em 0;
+  width: 100%;
 }
-@media (max-width: 900px) {
-  .videotutorial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 600px) {
-  .videotutorial-grid { grid-template-columns: 1fr; }
+@media (max-width: 560px) {
+  .videotutorial-grid { grid-template-columns: 1fr; gap: 1em; }
 }
 .vt-card {
   background: var(--c-bg);
@@ -877,40 +878,45 @@ body.lightbox-open { overflow: hidden; }
 .vt-meta {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 10px 12px 12px;
 }
 .vt-num {
   flex-shrink: 0;
-  width: 24px; height: 24px;
+  width: 22px; height: 22px;
   background: var(--c-primary);
   color: white;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.78em;
+  font-weight: 700; font-size: 0.72em;
 }
 .vt-text { flex: 1; min-width: 0; }
 .vt-title {
   display: block;
-  font-size: 0.92em;
+  font-size: 0.85em;
   font-weight: 600;
   color: var(--c-text);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   line-height: 1.3;
+  /* Max 2 righe per il titolo */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .vt-desc {
-  margin: 0 0 6px;
-  font-size: 0.8em;
+  margin: 0 0 5px;
+  font-size: 0.75em;
   color: var(--c-text-muted);
   line-height: 1.4;
-  /* Limita a 3 righe per non sbilanciare le card */
+  /* Limita a 2 righe per stare compatte nelle card strette */
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .vt-duration {
-  font-size: 0.78em;
+  font-size: 0.72em;
   color: var(--c-text-light);
   font-weight: 500;
 }
