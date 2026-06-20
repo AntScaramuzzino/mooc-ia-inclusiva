@@ -638,17 +638,33 @@ h2.learn-card-header .headerlink { display: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 360px;
+  min-height: 420px;
   margin: 1em auto;
   overflow: hidden;
   max-width: 100%;
+  aspect-ratio: 16 / 9;     /* mantiene proporzione anche con immagini broken */
 }
 .slide-img {
   max-width: 100%;
-  max-height: 460px;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;       /* NO crop, mantiene proporzioni */
   cursor: zoom-in;
   display: block;
 }
+/* Visual fallback se l'immagine è 0 bytes / broken */
+.slide-img[src]:not([src=""]) { background: transparent; }
+.slide-stage::before {
+  content: "Slide non disponibile";
+  position: absolute;
+  color: #94a3b8;
+  font-size: 0.95em;
+  letter-spacing: 0.05em;
+  z-index: 0;
+}
+.slide-stage { position: relative; }
+.slide-img { position: relative; z-index: 1; }
 .slide-img.hidden { display: none; }
 .slide-controls {
   display: flex;
