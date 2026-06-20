@@ -798,9 +798,15 @@ body.lightbox-open { overflow: hidden; }
 /* ============ VIDEOTUTORIAL GRID ============ */
 .videotutorial-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.4em;
+  grid-template-columns: repeat(3, minmax(0, 1fr));   /* sempre 3 colonne su desktop */
+  gap: 1em;
   margin: 1em 0;
+}
+@media (max-width: 900px) {
+  .videotutorial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .videotutorial-grid { grid-template-columns: 1fr; }
 }
 .vt-card {
   background: var(--c-bg);
@@ -855,31 +861,37 @@ body.lightbox-open { overflow: hidden; }
 .vt-meta {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 12px 14px;
 }
 .vt-num {
   flex-shrink: 0;
-  width: 28px; height: 28px;
+  width: 24px; height: 24px;
   background: var(--c-primary);
   color: white;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.85em;
+  font-weight: 700; font-size: 0.78em;
 }
 .vt-text { flex: 1; min-width: 0; }
 .vt-title {
   display: block;
-  font-size: 1.02em;
+  font-size: 0.92em;
+  font-weight: 600;
   color: var(--c-text);
   margin-bottom: 4px;
   line-height: 1.3;
 }
 .vt-desc {
   margin: 0 0 6px;
-  font-size: 0.88em;
+  font-size: 0.8em;
   color: var(--c-text-muted);
-  line-height: 1.45;
+  line-height: 1.4;
+  /* Limita a 3 righe per non sbilanciare le card */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .vt-duration {
   font-size: 0.78em;
