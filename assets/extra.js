@@ -1044,11 +1044,131 @@
     }
   }
 
+  // ============ PROMPT LAB (prova un prompt su Gemini / ChatGPT / Claude) ============
+  function initPromptLab() {
+    if (document.getElementById('mooc-prompt-lab-btn')) return;
+    // Solo su pagine modulo, non su home
+    if (!document.querySelector('.learn-card')) return;
+
+    const fab = document.createElement('button');
+    fab.id = 'mooc-prompt-lab-btn';
+    fab.className = 'mooc-pl-fab';
+    fab.title = 'Prova un prompt su Gemini / ChatGPT / Claude';
+    fab.setAttribute('aria-label', 'Apri il Prompt Lab');
+    fab.innerHTML = '🧪 <span class="mooc-pl-fab-label">Prova il prompt</span>';
+    document.body.appendChild(fab);
+
+    const drawer = document.createElement('div');
+    drawer.id = 'mooc-prompt-lab';
+    drawer.className = 'mooc-pl-drawer';
+    drawer.innerHTML =
+      '<div class="mooc-pl-header">' +
+        '<h3>🧪 Prompt Lab</h3>' +
+        '<button class="mooc-pl-close" aria-label="Chiudi (Esc)">×</button>' +
+      '</div>' +
+      '<p class="mooc-pl-hint">Incolla qui (o seleziona prima il testo nella dispensa e premi <kbd>Cmd</kbd>+<kbd>K</kbd>) un prompt da provare. Poi clicca uno dei pulsanti: il prompt si apre in una nuova finestra già precompilato.</p>' +
+      '<textarea class="mooc-pl-ta" placeholder="Incolla qui il prompt…" rows="8"></textarea>' +
+      '<div class="mooc-pl-actions">' +
+        '<button class="mooc-pl-go mooc-pl-go-gemini" data-target="gemini">Apri in Gemini →</button>' +
+        '<button class="mooc-pl-go mooc-pl-go-gpt"    data-target="chatgpt">Apri in ChatGPT →</button>' +
+        '<button class="mooc-pl-go mooc-pl-go-claude" data-target="claude">Apri in Claude →</button>' +
+      '</div>' +
+      '<div class="mooc-pl-actions-sec">' +
+        '<button class="mooc-pl-copy">📋 Copia negli appunti</button>' +
+        '<button class="mooc-pl-clear">🗑 Svuota</button>' +
+      '</div>' +
+      '<p class="mooc-pl-footer">Apre in <strong>nuova finestra</strong>. Devi essere già loggato sul servizio scelto.</p>';
+    document.body.appendChild(drawer);
+
+    const ta = drawer.querySelector('.mooc-pl-ta');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      fab.classList.add('hidden');
+      // Se l'utente aveva selezionato del testo, precompila la textarea
+      const sel = (window.getSelection && window.getSelection().toString() || '').trim();
+      if (sel && sel.length > 5 && !ta.value) ta.value = sel;
+      setTimeout(() => ta.focus(), 100);
+    }
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      fab.classList.remove('hidden');
+    }
+
+    fab.addEventListener('click', openDrawer);
+    drawer.querySelector('.mooc-pl-close').addEventListener('click', closeDrawer);
+
+    // Esc per chiudere
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) {
+        e.preventDefault();
+        closeDrawer();
+      }
+      // Cmd/Ctrl + K = apri lab con selezione corrente
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k' && !drawer.classList.contains('open')) {
+        e.preventDefault();
+        openDrawer();
+      }
+    });
+
+    // URL builders per ogni provider
+    const PROVIDERS = {
+      gemini:  { url: 'https://gemini.google.com/app',       param: 'text' },
+      chatgpt: { url: 'https://chatgpt.com/',                 param: 'q'    },
+      claude:  { url: 'https://claude.ai/new',                param: 'q'    },
+    };
+
+    drawer.querySelectorAll('.mooc-pl-go').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prompt = (ta.value || '').trim();
+        if (!prompt) {
+          ta.focus();
+          ta.style.borderColor = '#c81f1f';
+          setTimeout(() => { ta.style.borderColor = ''; }, 1500);
+          return;
+        }
+        const target = btn.getAttribute('data-target');
+        const cfg = PROVIDERS[target];
+        if (!cfg) return;
+        // I parametri URL hanno limiti pratici (~2000 char in alcuni browser).
+        // Se il prompt è troppo lungo, oltre ad aprire la pagina, lo copio negli appunti
+        // come safety net.
+        const url = cfg.url + '?' + cfg.param + '=' + encodeURIComponent(prompt);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        // Fallback: copia anche negli appunti se il prompt è lungo
+        if (prompt.length > 1500 && navigator.clipboard) {
+          navigator.clipboard.writeText(prompt).catch(() => {});
+        }
+      });
+    });
+
+    // Copia
+    drawer.querySelector('.mooc-pl-copy').addEventListener('click', () => {
+      const prompt = (ta.value || '').trim();
+      if (!prompt) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(prompt).then(() => {
+          const btn = drawer.querySelector('.mooc-pl-copy');
+          const old = btn.textContent;
+          btn.textContent = '✓ Copiato';
+          setTimeout(() => { btn.textContent = old; }, 1500);
+        });
+      }
+    });
+
+    // Svuota
+    drawer.querySelector('.mooc-pl-clear').addEventListener('click', () => {
+      ta.value = '';
+      ta.focus();
+    });
+  }
+
   // ============ INIT ============
   function init() {
     initLocalSession();
     initFontSizeToggle();
     initVideotutorial();
+    initPromptLab();
     buildCustomSidebar();
     initQuiz();
     initFlashcards();

@@ -1510,6 +1510,49 @@ body.mooc-modal-open { overflow: hidden; }
 }
 
 /* ============================================================
+   LEGGIBILITÀ DISPENSE — bold + highlighter
+   ============================================================ */
+
+/* Effetto evidenziatore giallo per i concetti fondamentali */
+.md-typeset mark,
+.learn-card-body mark {
+  background: linear-gradient(180deg, transparent 55%, #FFF59D 55%, #FFE56B 95%, transparent 95%);
+  color: inherit;
+  padding: 0 0.1em;
+  font-weight: 500;
+  border-radius: 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.md-typeset mark strong,
+.learn-card-body mark strong {
+  color: var(--c-text);
+}
+
+/* Bold con leggero contrasto in più: stacca i concetti chiave dal testo */
+.md-typeset strong,
+.learn-card-body strong {
+  color: var(--c-text);
+  font-weight: 700;
+}
+/* Bold all'interno di una frase evidenziata: stacca ancora di più */
+.md-typeset mark strong {
+  color: #5D4037;          /* marrone scuro su giallo, contrasto AA */
+}
+
+/* Dark mode */
+[data-md-color-scheme="slate"] .md-typeset mark,
+[data-md-color-scheme="slate"] .learn-card-body mark {
+  background: linear-gradient(180deg, transparent 55%, rgba(255, 230, 90, 0.45) 55%, rgba(255, 210, 60, 0.55) 95%, transparent 95%);
+  color: #fff;
+}
+[data-md-color-scheme="slate"] .md-typeset mark strong {
+  color: #FFF59D;
+}
+[data-md-color-scheme="slate"] .md-typeset strong { color: #f3f4f6; }
+
+
+/* ============================================================
    HOMEPAGE — Google Skills inspired
    ============================================================ */
 .gs-hero {
@@ -1863,9 +1906,170 @@ body.mooc-modal-open { overflow: hidden; }
   border-color: #374151;
 }
 
+/* ============================================================
+   PROMPT LAB — bottone fluttuante + drawer per provare prompt
+   ============================================================ */
+.mooc-pl-fab {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 9970;
+  background: linear-gradient(135deg, var(--c-primary) 0%, #6B4FE0 100%);
+  color: white;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 20px 12px 16px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 6px 24px rgba(0, 86, 210, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+.mooc-pl-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 86, 210, 0.45);
+}
+.mooc-pl-fab:active { transform: translateY(0); }
+.mooc-pl-fab.hidden { opacity: 0; pointer-events: none; transform: scale(0.8); }
+@media (max-width: 600px) {
+  .mooc-pl-fab-label { display: none; }
+  .mooc-pl-fab { padding: 12px; }
+}
+
+.mooc-pl-drawer {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 9971;
+  width: 400px; max-width: calc(100vw - 32px);
+  background: white;
+  border-radius: var(--c-radius-lg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  padding: 18px 18px 16px;
+  transform: scale(0.85) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: bottom right;
+  transition: transform 0.22s cubic-bezier(.2,.9,.3,1.2), opacity 0.18s;
+}
+.mooc-pl-drawer.open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.mooc-pl-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.4em;
+}
+.mooc-pl-header h3 {
+  margin: 0; font-size: 1.1em; font-weight: 700;
+  color: var(--c-text);
+}
+.mooc-pl-close {
+  background: transparent; border: 0; cursor: pointer;
+  font-size: 1.5em; line-height: 1; color: var(--c-text-muted);
+  padding: 2px 8px; border-radius: 999px;
+}
+.mooc-pl-close:hover { background: var(--c-bg-soft); color: var(--c-text); }
+.mooc-pl-hint {
+  font-size: 0.82em;
+  color: var(--c-text-muted);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+.mooc-pl-hint kbd {
+  background: var(--c-bg-soft);
+  border: 1px solid var(--c-border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 0.85em;
+  font-family: ui-monospace, monospace;
+}
+.mooc-pl-ta {
+  width: 100%;
+  font: inherit;
+  font-size: 0.9em;
+  line-height: 1.4;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--c-radius-sm);
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 100px;
+  background: var(--c-bg);
+  color: var(--c-text);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.mooc-pl-ta:focus { border-color: var(--c-primary); }
+.mooc-pl-actions {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 12px;
+}
+.mooc-pl-actions-sec {
+  display: flex; gap: 6px;
+  margin-top: 8px;
+  border-top: 1px solid var(--c-border);
+  padding-top: 8px;
+}
+.mooc-pl-go {
+  border: 0;
+  border-radius: var(--c-radius-sm);
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  text-align: left;
+  transition: opacity 0.12s, transform 0.05s;
+}
+.mooc-pl-go:hover { opacity: 0.92; }
+.mooc-pl-go:active { transform: translateY(1px); }
+.mooc-pl-go-gemini  { background: linear-gradient(90deg, #4796E6 0%, #6B4FE0 100%); }
+.mooc-pl-go-gpt     { background: #10A37F; }
+.mooc-pl-go-claude  { background: #D97757; }
+.mooc-pl-copy,
+.mooc-pl-clear {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--c-border);
+  border-radius: var(--c-radius-sm);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.82em;
+  color: var(--c-text-muted);
+  cursor: pointer;
+}
+.mooc-pl-copy:hover,
+.mooc-pl-clear:hover { background: var(--c-bg-soft); color: var(--c-text); }
+.mooc-pl-footer {
+  margin: 10px 0 0;
+  font-size: 0.74em;
+  color: var(--c-text-light);
+}
+
+/* Dark mode */
+[data-md-color-scheme="slate"] .mooc-pl-drawer {
+  background: #1f2937;
+  color: #f3f4f6;
+}
+[data-md-color-scheme="slate"] .mooc-pl-header h3 { color: #f3f4f6; }
+[data-md-color-scheme="slate"] .mooc-pl-hint { color: #cbd5e1; }
+[data-md-color-scheme="slate"] .mooc-pl-ta {
+  background: #111827; border-color: #374151; color: #f3f4f6;
+}
+[data-md-color-scheme="slate"] .mooc-pl-copy,
+[data-md-color-scheme="slate"] .mooc-pl-clear {
+  color: #cbd5e1; border-color: #374151;
+}
+[data-md-color-scheme="slate"] .mooc-pl-actions-sec { border-color: #374151; }
+[data-md-color-scheme="slate"] .mooc-pl-footer { color: #94a3b8; }
+
 /* ============ PRINT ============ */
 @media print {
   .md-sidebar, .md-header, .md-tabs, .module-completion, .learn-footer { display: none !important; }
   .learn-card { break-inside: avoid; border: 1px solid #ccc; }
-  .gs-hero, .gs-final-cta, .mooc-toolbar { display: none !important; }
+  .gs-hero, .gs-final-cta, .mooc-toolbar, .mooc-pl-fab, .mooc-pl-drawer { display: none !important; }
 }
