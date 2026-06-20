@@ -729,9 +729,14 @@
   }
 
   function openUserPrompt(opts) {
+    // Guard: se c'è già un modale aperto, non aprirne un altro
+    if (document.body.classList.contains('mooc-modal-open')) return;
+    // Pulizia di eventuali residui (es. navigazione MkDocs Material)
+    document.querySelectorAll('.mooc-user-modal-overlay').forEach(el => el.remove());
+
     const existing = getStoredUser() || {};
     const isEdit = !!opts && opts.edit;
-    // Modale
+    // Modale — uso class+querySelector locale invece di ID globali per evitare collisioni
     const overlay = document.createElement('div');
     overlay.className = 'mooc-user-modal-overlay';
     overlay.innerHTML =
@@ -739,14 +744,14 @@
         '<h2 id="mum-title">👋 ' + (isEdit ? 'Modifica i tuoi dati' : 'Benvenutə nel MOOC') + '</h2>' +
         '<p>Prima di iniziare, inserisci il tuo <strong>nome e cognome</strong> e la tua <strong>email</strong>. ' +
         'I dati restano <strong>solo nel tuo browser</strong> e vengono usati alla fine per compilare il quiz di certificazione con i tuoi dati corretti.</p>' +
-        '<form id="mum-form" novalidate>' +
-          '<label>Nome e cognome <input type="text" id="mum-name" required minlength="3" autocomplete="name" value="' + esc_(existing.name || '') + '"></label>' +
-          '<label>Email <input type="email" id="mum-email" required autocomplete="email" value="' + esc_(existing.email || '') + '"></label>' +
-          '<label>Scuola (opzionale) <input type="text" id="mum-school" autocomplete="organization" value="' + esc_(existing.school || '') + '"></label>' +
-          '<div class="mum-err" id="mum-err"></div>' +
+        '<form class="mum-form" novalidate>' +
+          '<label>Nome e cognome <input type="text" class="mum-name" required minlength="3" autocomplete="name" value="' + esc_(existing.name || '') + '"></label>' +
+          '<label>Email <input type="email" class="mum-email" required autocomplete="email" value="' + esc_(existing.email || '') + '"></label>' +
+          '<label>Scuola (opzionale) <input type="text" class="mum-school" autocomplete="organization" value="' + esc_(existing.school || '') + '"></label>' +
+          '<div class="mum-err"></div>' +
           '<div class="mum-actions">' +
-            (isEdit ? '<button type="button" id="mum-cancel">Annulla</button>' : '') +
-            '<button type="submit" id="mum-submit">' + (isEdit ? 'Salva' : 'Inizia il corso →') + '</button>' +
+            (isEdit ? '<button type="button" class="mum-cancel">Annulla</button>' : '') +
+            '<button type="submit" class="mum-submit">' + (isEdit ? 'Salva' : 'Inizia il corso →') + '</button>' +
           '</div>' +
         '</form>' +
         '<p class="mum-privacy">Privacy: i dati sono salvati esclusivamente nel localStorage del browser. ' +
@@ -754,33 +759,68 @@
       '</div>';
     document.body.appendChild(overlay);
     document.body.classList.add('mooc-modal-open');
-    // Focus
-    setTimeout(() => { const el = document.getElementById('mum-name'); if (el) el.focus(); }, 50);
+
+    // Focus sul primo input — query locale all'overlay
+    setTimeout(() => {
+      const nameEl = overlay.querySelector('.mum-name');
+      if (nameEl) nameEl.focus();
+    }, 50);
 
     function close() {
       overlay.remove();
       document.body.classList.remove('mooc-modal-open');
     }
 
-    const form = document.getElementById('mum-form');
+    const form = overlay.querySelector('.mum-form');
+    // Submit handler — uso capture e stopPropagation per evitare interferenze
+    // con eventuali listener globali (es. instant-loading di MkDocs Material).
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = document.getElementById('mum-name').value.trim();
-      const email = document.getElementById('mum-email').value.trim();
-      const school = document.getElementById('mum-school').value.trim();
-      const err = document.getElementById('mum-err');
-      if (name.length < 3) { err.textContent = 'Inserisci nome e cognome (almeno 3 caratteri).'; return; }
-      if (!isValidEmail(email)) { err.textContent = 'Email non valida.'; return; }
-      setStoredUser({ name, email, school, since: Date.now() });
+      e.stopPropagation();
+      const name = (overlay.querySelector('.mum-name').value || '').trim();
+      const email = (overlay.querySelector('.mum-email').value || '').trim();
+      const school = (overlay.querySelector('.mum-school').value || '').trim();
+      const err = overlay.querySelector('.mum-err');
+      if (name.length < 3) { err.textContent = 'Inserisci nome e cognome (almeno 3 caratteri).'; return false; }
+      if (!isValidEmail(email)) { err.textContent = 'Email non valida.'; return false; }
+
+      // Salva con verifica: ricontrolla dopo write
+      try {
+        setStoredUser({ name, email, school, since: Date.now() });
+        const check = getStoredUser();
+        if (!check || check.email !== email) {
+          err.textContent = 'Errore di salvataggio. Riprova (controlla se localStorage è abilitato).';
+          return false;
+        }
+      } catch (ex) {
+        err.textContent = 'Errore di salvataggio: ' + (ex.message || ex);
+        return false;
+      }
+
       close();
       renderUserBadge();
-      // Re-render quiz finale link se siamo sulla pagina del gate
       const gate = document.getElementById('quiz-gate');
       if (gate) initQuizGate();
+      return false;
     });
 
-    const cancelBtn = document.getElementById('mum-cancel');
-    if (cancelBtn) cancelBtn.addEventListener('click', close);
+    // Bottoni: usano querySelector locale all'overlay
+    const cancelBtn = overlay.querySelector('.mum-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      close();
+    });
+
+    // Anche Esc chiude (solo in edit mode, perché al primo accesso è obbligatorio)
+    if (isEdit) {
+      const onEsc = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', onEsc);
+          close();
+        }
+      };
+      document.addEventListener('keydown', onEsc);
+    }
   }
 
   function renderUserBadge() {
@@ -811,10 +851,9 @@
 
   function initLocalSession() {
     renderUserBadge();
-    // Se non c'è ancora un utente, mostra il modale obbligatorio (tranne sulla home)
     const user = getStoredUser();
     if (!user) {
-      // Auto-prompt al primo caricamento, su qualsiasi pagina
+      // openUserPrompt() ha guard interno: niente stacking di modali.
       openUserPrompt();
     }
   }
