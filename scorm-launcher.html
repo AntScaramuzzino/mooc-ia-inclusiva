@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>L'IA come co-pilota nella progettazione della didattica inclusiva</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: "Source Sans 3", system-ui, sans-serif; }
+    #scorm-bar {
+      display: flex; align-items: center; gap: 14px;
+      height: 34px; padding: 0 14px; box-sizing: border-box;
+      background: #1f2933; color: #e4e7eb; font-size: 13px;
+      border-bottom: 1px solid #0f1419;
+    }
+    #scorm-bar .title { font-weight: 600; white-space: nowrap; }
+    #scorm-progress { color: #cbd2d9; }
+    .scorm-badge { margin-left: auto; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .scorm-badge.live { background: #035388; color: #fff; }
+    .scorm-badge.ok   { background: #0b7a3b; color: #fff; }
+    .scorm-badge.warn { background: #8d6708; color: #fff; }
+    #course-frame { display: block; width: 100%; height: calc(100% - 34px); border: 0; }
+  </style>
+  <!-- module list (per calcolare il completamento) -->
+  <script src="assets/manifest.js"></script>
+  <!-- SCORM API -->
+  <script src="assets/scorm/SCORM_API_wrapper.js"></script>
+</head>
+<body>
+  <div id="scorm-bar">
+    <span class="title">L'IA come co-pilota · MOOC</span>
+    <span id="scorm-progress">Caricamento…</span>
+    <span id="scorm-status" class="scorm-badge warn">…</span>
+  </div>
+  <iframe id="course-frame" src="index.html"
+          title="Contenuto del corso"
+          allow="autoplay; encrypted-media; fullscreen"
+          allowfullscreen></iframe>
+  <script src="assets/scorm/scorm-launcher.js"></script>
+</body>
+</html>

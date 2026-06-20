@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · Esportazione SCORM — MOOC IA Inclusiva</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1f2933; --line:#323f4b; --txt:#e4e7eb; --muted:#9aa5b1;
+    --accent:#2bb0ed; --accent-d:#035388; --ok:#27ab83; --warn:#f0b429; --err:#e12d39;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Source Sans 3",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.5;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px}
+  .wrap{width:100%;max-width:760px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 24px;font-size:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:18px}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input[type=password]{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
+    background:#0b0f14;color:var(--txt);font-size:15px}
+  .btn{appearance:none;border:0;border-radius:8px;padding:11px 18px;font-size:15px;font-weight:600;
+    cursor:pointer;background:var(--accent-d);color:#fff;transition:filter .15s}
+  .btn:hover{filter:brightness(1.15)} .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.primary{background:var(--accent);color:#04222e}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{background:#0b0f14;color:var(--txt);border:0;padding:10px 16px;cursor:pointer;font-size:14px}
+  .seg button.on{background:var(--accent);color:#04222e;font-weight:700}
+  .hint{font-size:13px;color:var(--muted);margin-top:10px}
+  code{background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:13px}
+  .bar{height:10px;background:#0b0f14;border-radius:6px;overflow:hidden;margin:14px 0 6px;border:1px solid var(--line)}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent-d),var(--accent));transition:width .2s}
+  .status{font-size:13px;color:var(--muted);min-height:18px}
+  .status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.warn{color:var(--warn)}
+  ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:14px}
+  .hidden{display:none}
+  a{color:var(--accent)}
+  .pill{font-size:12px;background:#0b0f14;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pannello admin — Esportazione SCORM</h1>
+  <p class="sub">L'IA come co-pilota nella progettazione della didattica inclusiva · area riservata</p>
+
+  <!-- LOGIN -->
+  <div class="card" id="login">
+    <label for="pw">Password amministratore</label>
+    <div class="row">
+      <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password" style="flex:1">
+      <button class="btn" id="loginBtn">Entra</button>
+    </div>
+    <div class="status err" id="loginErr"></div>
+    <p class="hint">Accesso lato client. Per cambiare password vedi <code>scorm-export/README.md</code>.</p>
+  </div>
+
+  <!-- PANNELLO -->
+  <div id="panel" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <strong>Genera il pacchetto SCORM nel browser</strong>
+        <span class="pill" id="fileCount">—</span>
+      </div>
+      <p class="hint">Impacchetta l'intero MOOC (contenuti, slide, audio, dispense) in un file <code>.zip</code>
+        conforme allo standard SCORM, pronto da caricare su Moodle o altri LMS.
+        Tracciamento: <strong>completamento dei 5 moduli</strong> + <strong>punteggio aggregato dei quiz</strong>
+        (soglia 70% per l'esito "superato").</p>
+
+      <label style="margin-top:14px">Versione SCORM</label>
+      <div class="seg" id="verSeg">
+        <button data-v="1.2" class="on">SCORM 1.2</button>
+        <button data-v="2004">SCORM 2004</button>
+      </div>
+
+      <div class="row" style="margin-top:18px">
+        <button class="btn primary" id="buildBtn">Genera e scarica il pacchetto</button>
+      </div>
+
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="status" id="buildStatus">Pronto.</div>
+      <p class="hint">⚠️ Usa un <strong>computer desktop</strong>: il pacchetto è di circa 230 MB e la
+        generazione può richiedere 1–3 minuti. Non chiudere la scheda durante il processo.</p>
+    </div>
+
+    <div class="card">
+      <strong>In alternativa: generazione da terminale (Mac)</strong>
+      <ul>
+        <li>Apri il Terminale nella cartella <code>MOOC/scorm-export/</code></li>
+        <li>Esegui <code>python3 build_scorm.py</code> → crea <code>dist/MOOC-IA-Inclusiva_SCORM-1.2.zip</code> e <code>…-2004.zip</code></li>
+        <li>Dopo aver aggiornato i contenuti del corso: <code>python3 build_scorm.py --update-site</code> per riallineare questo pannello</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/* ====== CONFIG ====== */
+// SHA-256 della password admin. Default password: "mooc-admin-2026".
+// Per cambiarla: genera il nuovo hash (vedi README) e incollalo qui.
+var ADMIN_PASS_SHA256 = "937c19fa0e5830b87d386427ee6a113f393799454c64cc2fd072d7cbdd071b1c";
+var COURSE_TITLE = "L'IA come co-pilota nella progettazione della didattica inclusiva";
+var MASTERY = 70;
+
+/* ====== LOGIN ====== */
+async function sha256(str){
+  var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+var loginBtn=document.getElementById("loginBtn"), pw=document.getElementById("pw"),
+    loginErr=document.getElementById("loginErr");
+async function tryLogin(){
+  loginErr.textContent="";
+  var h = await sha256(pw.value);
+  if(h === ADMIN_PASS_SHA256){
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("panel").classList.remove("hidden");
+    loadFileList();
+  } else {
+    loginErr.textContent = "Password errata.";
+  }
+}
+loginBtn.addEventListener("click", tryLogin);
+pw.addEventListener("keydown", e=>{ if(e.key==="Enter") tryLogin(); });
+
+/* ====== VERSIONE ====== */
+var version="1.2";
+document.querySelectorAll("#verSeg button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("#verSeg button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); version=b.dataset.v;
+  });
+});
+
+/* ====== FILE LIST ====== */
+var FILES=[];
+function loadFileList(){
+  fetch("assets/scorm/filelist.json",{cache:"no-store"})
+    .then(r=>{ if(!r.ok) throw new Error("filelist.json non trovato ("+r.status+")"); return r.json(); })
+    .then(d=>{ FILES=d.files||[]; document.getElementById("fileCount").textContent=FILES.length+" file"; })
+    .catch(e=>{
+      document.getElementById("fileCount").textContent="errore";
+      setStatus("Impossibile leggere l'elenco file: "+e.message+". Esegui prima 'python3 build_scorm.py --update-site'.","err");
+      document.getElementById("buildBtn").disabled=true;
+    });
+}
+
+/* ====== MANIFEST ====== */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function fileEls(files){return files.map(f=>'      <file href="'+esc(f)+'"/>').join("\n");}
+function manifest12(files){
+return '<?xml version="1.0" encoding="UTF-8"?>\n'+
+'<manifest identifier="MOOC_IA_INCLUSIVA_SCORM12" version="1.0"\n'+
+'  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"\n'+
+'  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"\n'+
+'  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'+
+'  <metadata><schema>ADL SCORM</schema><schemaversion>1.2</schemaversion></metadata>\n'+
+'  <organizations default="ORG-MOOC">\n'+
+'    <organization identifier="ORG-MOOC">\n'+
+'      <title>'+esc(COURSE_TITLE)+'</title>\n'+
+'      <item identifier="ITEM-MOOC" identifierref="RES-MOOC" isvisible="true">\n'+
+'        <title>'+esc(COURSE_TITLE)+'</title>\n'+
+'        <adlcp:masteryscore>'+MASTERY+'</adlcp:masteryscore>\n'+
+'      </item>\n'+
+'    </organization>\n'+
+'  </organizations>\n'+
+'  <resources>\n'+
+'    <resource identifier="RES-MOOC" type="webcontent" adlcp:scormtype="sco" href="scorm-launcher.html">\n'+
+fileEls(files)+'\n'+
+'    </resource>\n'+
+'  </resources>\n'+
+'</manifest>\n';
+}
+function manifest2004(files){
+return '<?xml version="1.0" encoding="UTF-8"?>\n'+
+'<manifest identifier="MOOC_IA_INCLUSIVA_SCORM2004" version="1.0"\n'+
+'  xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"\n'+
+'  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3"\n'+
+'  xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3"\n'+
+'  xmlns:adlnav="http://www.adlnet.org/xsd/adlnav_v1p3"\n'+
+'  xmlns:imsss="http://www.imsglobal.org/xsd/imsss"\n'+
+'  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'+
+'  <metadata><schema>ADL SCORM</schema><schemaversion>2004 4th Edition</schemaversion></metadata>\n'+
+'  <organizations default="ORG-MOOC">\n'+
+'    <organization identifier="ORG-MOOC">\n'+
+'      <title>'+esc(COURSE_TITLE)+'</title>\n'+
+'      <item identifier="ITEM-MOOC" identifierref="RES-MOOC">\n'+
+'        <title>'+esc(COURSE_TITLE)+'</title>\n'+
+'        <imsss:sequencing>\n'+
+'          <imsss:objectives>\n'+
+'            <imsss:primaryObjective objectiveID="PRIMARYOBJ" satisfiedByMeasure="true">\n'+
+'              <imsss:minNormalizedMeasure>'+(MASTERY/100).toFixed(2)+'</imsss:minNormalizedMeasure>\n'+
+'            </imsss:primaryObjective>\n'+
+'          </imsss:objectives>\n'+
+'        </imsss:sequencing>\n'+
+'      </item>\n'+
+'    </organization>\n'+
+'  </organizations>\n'+
+'  <resources>\n'+
+'    <resource identifier="RES-MOOC" type="webcontent" adlcp:scormType="sco" href="scorm-launcher.html">\n'+
+fileEls(files)+'\n'+
+'    </resource>\n'+
+'  </resources>\n'+
+'</manifest>\n';
+}
+
+/* ====== BUILD ====== */
+var barFill=document.getElementById("barFill"), buildBtn=document.getElementById("buildBtn");
+function setStatus(t,cls){var s=document.getElementById("buildStatus");s.textContent=t;s.className="status "+(cls||"");}
+function setBar(p){barFill.style.width=Math.round(p*100)+"%";}
+
+buildBtn.addEventListener("click", async ()=>{
+  if(!FILES.length){ setStatus("Elenco file non disponibile.","err"); return; }
+  buildBtn.disabled=true; setBar(0);
+  try{
+    var zip=new JSZip();
+    // manifest
+    zip.file("imsmanifest.xml", version==="1.2"?manifest12(FILES):manifest2004(FILES));
+    // scarica ogni file e aggiungilo
+    for(var i=0;i<FILES.length;i++){
+      var path=FILES[i];
+      setStatus("Scarico ("+(i+1)+"/"+FILES.length+"): "+path, "");
+      var resp=await fetch(path,{cache:"no-store"});
+      if(!resp.ok) throw new Error("download fallito: "+path+" ("+resp.status+")");
+      var buf=await resp.arrayBuffer();
+      zip.file(path, buf);
+      setBar((i+1)/(FILES.length+1));
+    }
+    setStatus("Comprimo il pacchetto… (può richiedere un minuto)","warn");
+    var blob=await zip.generateAsync(
+      {type:"blob",compression:"DEFLATE",compressionOptions:{level:5}},
+      meta=>{ setBar((FILES.length + meta.percent/100)/(FILES.length+1)); }
+    );
+    var name="MOOC-IA-Inclusiva_SCORM-"+(version==="1.2"?"1.2":"2004")+".zip";
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click();
+    a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
+    setBar(1); setStatus("✓ Pacchetto generato: "+name+" ("+(blob.size/1048576).toFixed(1)+" MB)","ok");
+  }catch(e){
+    setStatus("Errore: "+e.message,"err");
+  }finally{
+    buildBtn.disabled=false;
+  }
+});
+</script>
+</body>
+</html>
