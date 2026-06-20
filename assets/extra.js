@@ -831,14 +831,25 @@
     }
   }
 
+  function ensureToolbar() {
+    let bar = document.getElementById('mooc-toolbar');
+    if (bar && document.body.contains(bar)) return bar;
+    bar = document.createElement('div');
+    bar.id = 'mooc-toolbar';
+    bar.className = 'mooc-toolbar';
+    document.body.appendChild(bar);
+    return bar;
+  }
+
   function renderUserBadge() {
+    const toolbar = ensureToolbar();
     let box = document.getElementById('mooc-auth-box');
-    if (!box) {
+    if (!box || !toolbar.contains(box)) {
+      if (box) box.remove();
       box = document.createElement('div');
       box.id = 'mooc-auth-box';
       box.className = 'mooc-auth-box';
-      const header = document.querySelector('.md-header__inner') || document.querySelector('.md-header') || document.body;
-      header.appendChild(box);
+      toolbar.appendChild(box);   // sempre dopo il fs-toggle se presente
     }
     const user = getStoredUser();
     if (user) {
@@ -847,14 +858,60 @@
         '<div class="auth-user" title="' + esc_(user.email) + '">' +
           '<span class="auth-avatar-fallback">' + esc_(initial) + '</span>' +
           '<span class="auth-name">' + esc_(user.name) + '</span>' +
-          '<button class="auth-edit" title="Modifica i tuoi dati" aria-label="Modifica">✎</button>' +
+          '<button class="auth-edit" title="Modifica i tuoi dati" aria-label="Modifica i tuoi dati">✎</button>' +
+          '<button class="auth-reset" title="Resetta il completamento delle attività" aria-label="Resetta progresso">🔄</button>' +
         '</div>';
-      const btn = box.querySelector('.auth-edit');
-      if (btn) btn.addEventListener('click', () => openUserPrompt({ edit: true }));
+      const editBtn = box.querySelector('.auth-edit');
+      if (editBtn) editBtn.addEventListener('click', () => openUserPrompt({ edit: true }));
+      const resetBtn = box.querySelector('.auth-reset');
+      if (resetBtn) resetBtn.addEventListener('click', resetProgressWithConfirm);
     } else {
       box.innerHTML = '<button class="auth-signin" title="Identificati per il MOOC">👤 Identificati</button>';
       box.querySelector('.auth-signin').addEventListener('click', () => openUserPrompt());
     }
+  }
+
+  // Reset progresso (mantiene l'identità del corsista, azzera solo le attività completate)
+  function resetProgressWithConfirm() {
+    const p = getProgress();
+    const nModules = Object.keys(p).length;
+    let nActivities = 0;
+    Object.values(p).forEach(m => {
+      if (m && m.items) nActivities += Object.keys(m.items).length;
+    });
+    const summary = nModules === 0
+      ? "Non hai ancora completato nessuna attività."
+      : "Hai " + nActivities + " attività completate su " + nModules + " moduli.";
+
+    const msg =
+      "⚠ Reset del progresso\n\n" +
+      summary + "\n\n" +
+      "Sei sicurə di voler azzerare TUTTO il completamento delle attività?\n" +
+      "Dovrai ripercorrere il MOOC da capo (i tuoi dati nome/email restano).\n\n" +
+      "Premi OK per confermare, oppure Annulla.";
+
+    if (!window.confirm(msg)) return;
+
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      // Pulisci anche eventuali tracce di beacon già inviati (lo stato in-memory)
+      try { Object.keys(_beaconSent).forEach(k => { delete _beaconSent[k]; }); } catch (e) {}
+    } catch (e) {
+      window.alert("Errore durante il reset: " + (e && e.message ? e.message : e));
+      return;
+    }
+    // Aggiorna UI
+    refreshSidebar();
+    const gate = document.getElementById('quiz-gate');
+    if (gate) initQuizGate();
+    // Aggiorna anche i checkbox di completamento manuale
+    document.querySelectorAll('.module-completion input[type=checkbox]').forEach(cb => {
+      cb.checked = false;
+      const wrap = cb.closest('.module-completion');
+      if (wrap) wrap.classList.remove('done');
+    });
+    // Reload per ridisegnare tutto pulito (homepage progress, item-level UI, etc.)
+    setTimeout(() => { window.location.reload(); }, 100);
   }
 
   function initLocalSession() {
@@ -919,16 +976,24 @@
   }
 
   function initFontSizeToggle() {
-    if (document.getElementById('mooc-fs-toggle')) return;
-    const host = document.createElement('div');
+    const toolbar = ensureToolbar();
+    let host = document.getElementById('mooc-fs-toggle');
+    if (host && toolbar.contains(host)) {
+      applyFontStep(getFontStep());
+      return;
+    }
+    if (host) host.remove();
+    host = document.createElement('div');
     host.id = 'mooc-fs-toggle';
     host.className = 'mooc-fs-toggle';
     host.innerHTML =
       '<button class="fs-btn fs-minus" aria-label="Riduci dimensione testo" title="Riduci testo">A−</button>' +
       '<span class="fs-label" id="mooc-fs-label">100%</span>' +
       '<button class="fs-btn fs-plus" aria-label="Aumenta dimensione testo" title="Aumenta testo">A+</button>';
-    const header = document.querySelector('.md-header__inner') || document.querySelector('.md-header') || document.body;
-    header.appendChild(host);
+    // Inserisci il fs-toggle PRIMA del badge auth (a sinistra)
+    const authBox = toolbar.querySelector('.mooc-auth-box');
+    if (authBox) toolbar.insertBefore(host, authBox);
+    else toolbar.appendChild(host);
 
     host.querySelector('.fs-minus').addEventListener('click', () => {
       const s = getFontStep();

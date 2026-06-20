@@ -734,19 +734,31 @@ body.lightbox-open { overflow: hidden; }
   .slide-lightbox .lightbox-next { right: 8px; }
 }
 
+/* ============ TOOLBAR FISSA (font-size + auth) ============ */
+/* Strisica unica posizionata SOTTO il main header di MkDocs Material,
+   per evitare conflitti con search/hamburger. */
+.mooc-toolbar {
+  position: fixed;
+  top: 56px;           /* subito sotto l'header di Material */
+  right: 14px;
+  z-index: 9990;
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+@media (max-width: 600px) {
+  .mooc-toolbar { top: 52px; right: 6px; gap: 4px; }
+}
+
 /* ============ FONT-SIZE TOGGLE (A−/A+) ============ */
 .mooc-fs-toggle {
-  position: fixed;
-  top: 10px;
-  right: 220px;
-  z-index: 9998;
   display: flex; align-items: center; gap: 4px;
   background: white;
   border: 1px solid var(--c-border);
   border-radius: 999px;
   padding: 2px;
-  box-shadow: var(--c-shadow-sm);
-  height: 34px;
+  box-shadow: var(--c-shadow-md);
+  height: 32px;
 }
 .mooc-fs-toggle .fs-btn {
   background: transparent;
@@ -779,8 +791,8 @@ body.lightbox-open { overflow: hidden; }
 }
 [data-md-color-scheme="slate"] .mooc-fs-toggle .fs-btn { color: #f3f4f6; }
 [data-md-color-scheme="slate"] .mooc-fs-toggle .fs-label { color: #94a3b8; }
-@media (max-width: 768px) {
-  .mooc-fs-toggle { right: 16px; top: 56px; }
+[data-md-color-scheme="slate"] .mooc-fs-toggle {
+  background: #1f2937; border-color: #374151;
 }
 
 /* ============ VIDEOTUTORIAL GRID ============ */
@@ -1274,43 +1286,57 @@ body[data-quiz-unlocked="true"] .md-nav__link[href*="quiz-finale"]::before {
   content: "🎓";
 }
 
-/* ============ AUTH BOX HEADER ============ */
+/* ============ AUTH BOX (dentro .mooc-toolbar) ============ */
 .mooc-auth-box {
-  position: fixed;
-  top: 10px; right: 16px;
-  z-index: 9999;
   display: flex; align-items: center; gap: 8px;
 }
 .mooc-auth-box .auth-user {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 6px;
   background: white; border: 1px solid var(--c-border);
-  border-radius: 999px; padding: 4px 12px 4px 4px;
-  box-shadow: var(--c-shadow-sm);
-  font-size: 0.85em;
+  border-radius: 999px; padding: 3px 4px 3px 4px;
+  box-shadow: var(--c-shadow-md);
+  font-size: 0.82em;
+  height: 32px;
 }
 .mooc-auth-box .auth-user img,
 .mooc-auth-box .auth-avatar-fallback {
-  width: 26px; height: 26px; border-radius: 50%;
+  width: 24px; height: 24px; border-radius: 50%;
   background: var(--c-primary); color: white;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 0.85em;
+  font-weight: 700; font-size: 0.8em;
   flex-shrink: 0;
 }
 .mooc-auth-box .auth-user img { object-fit: cover; }
 .mooc-auth-box .auth-name {
-  max-width: 160px;
+  max-width: 140px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-weight: 500; color: var(--c-text);
+  font-weight: 600; color: var(--c-text);
+  padding: 0 4px;
+}
+@media (max-width: 500px) {
+  .mooc-auth-box .auth-name { max-width: 70px; font-size: 0.85em; }
 }
 .mooc-auth-box .auth-edit,
+.mooc-auth-box .auth-reset,
 .mooc-auth-box .auth-logout {
   background: transparent; border: 0; cursor: pointer;
-  color: var(--c-text-muted); font-size: 0.95em;
-  line-height: 1; padding: 4px 6px; margin-left: 2px;
-  border-radius: 4px;
+  color: var(--c-text-muted); font-size: 0.9em;
+  line-height: 1; padding: 5px 7px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
 }
 .mooc-auth-box .auth-edit:hover { background: var(--c-bg-soft); color: var(--c-primary); }
+.mooc-auth-box .auth-reset:hover { background: #FFF4E0; color: #D97706; }
 .mooc-auth-box .auth-logout:hover { color: #c81f1f; }
+[data-md-color-scheme="slate"] .mooc-auth-box .auth-user {
+  background: #1f2937; border-color: #374151;
+}
+[data-md-color-scheme="slate"] .mooc-auth-box .auth-name { color: #f3f4f6; }
+[data-md-color-scheme="slate"] .mooc-auth-box .auth-edit,
+[data-md-color-scheme="slate"] .mooc-auth-box .auth-reset { color: #cbd5e1; }
+[data-md-color-scheme="slate"] .mooc-auth-box .auth-edit:hover { background: #374151; }
+[data-md-color-scheme="slate"] .mooc-auth-box .auth-reset:hover { background: #4b3a1f; color: #fbbf24; }
 .mooc-auth-box .auth-signin {
   background: var(--c-primary); color: white;
   border: 0; border-radius: 999px;
