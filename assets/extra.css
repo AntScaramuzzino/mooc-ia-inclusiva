@@ -1061,6 +1061,35 @@ body.lightbox-open { overflow: hidden; }
 .md-typeset a:hover {
   color: var(--c-primary-dark);
 }
+
+/* Bottoni stilizzati (learn-btn / gs-btn) dentro la prosa di Material:
+   forzo color + no-underline perché .md-typeset a ha specificità maggiore. */
+.md-typeset a.learn-btn,
+.md-typeset .learn-btn {
+  text-decoration: none !important;
+  color: var(--c-primary);
+}
+.md-typeset a.learn-btn:hover,
+.md-typeset .learn-btn:hover {
+  text-decoration: none !important;
+}
+.md-typeset a.learn-btn-primary,
+.md-typeset .learn-btn-primary,
+.md-typeset a.learn-btn-primary:visited,
+.md-typeset a.learn-btn-primary:hover {
+  color: white !important;
+  text-decoration: none !important;
+}
+.md-typeset a.gs-btn,
+.md-typeset .gs-btn {
+  text-decoration: none !important;
+}
+.md-typeset a.gs-btn-primary,
+.md-typeset .gs-btn-primary,
+.md-typeset a.gs-btn-primary:visited,
+.md-typeset a.gs-btn-primary:hover {
+  color: white !important;
+}
 .md-typeset blockquote {
   border-left: 3px solid var(--c-primary);
   background: var(--c-primary-light);
