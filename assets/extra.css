@@ -276,10 +276,15 @@ body, .md-typeset {
   background: var(--c-bg-soft);
 }
 .md-content__inner {
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
-  padding: 2em 2em 4em 2em;
+  padding: 2em 1.5em 4em 1.5em;
   background: var(--c-bg);
+}
+/* Sidebar primaria un po' più stretta per dare spazio al contenuto */
+@media (min-width: 76.25em) {
+  .md-sidebar--primary { width: 13rem; }
+  .md-main__inner { margin-left: 13rem; }
 }
 @media (min-width: 76.25em) {
   .md-content__inner {

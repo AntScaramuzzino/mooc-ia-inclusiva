@@ -177,7 +177,13 @@
         subLi.className = 'md-nav__item mooc-item';
         const subA = document.createElement('a');
         subA.className = 'md-nav__link mooc-item-link';
-        subA.href = prefix + mod.slug + '/index.html#' + item.id;
+        // Se l'item ha un href esplicito (es. quiz.html), usa quello.
+        // Altrimenti fallback all'anchor della pagina del modulo.
+        if (item.href) {
+          subA.href = prefix + mod.slug + '/' + item.href;
+        } else {
+          subA.href = prefix + mod.slug + '/index.html#' + item.id;
+        }
         subA.setAttribute('data-mooc-item', 'true');
         if (itemsDone[item.id]) subA.setAttribute('data-mooc-item-completed', 'true');
         const subSpan = document.createElement('span');
@@ -229,9 +235,16 @@
       // Sub-items
       const itemsDone = modProg.items || {};
       li.querySelectorAll('.mooc-item-link').forEach(a => {
-        const hrefMatch = (a.getAttribute('href') || '').match(/#([a-z-]+)$/);
-        if (!hrefMatch) return;
-        const itemId = hrefMatch[1];
+        const href = a.getAttribute('href') || '';
+        // Match: anchor (#item-id) oppure sotto-pagina (es. quiz.html)
+        let itemId = null;
+        const ah = href.match(/#([a-z-]+)$/);
+        if (ah) {
+          itemId = ah[1];
+        } else if (href.endsWith('quiz.html')) {
+          itemId = 'verificare-quiz';
+        }
+        if (!itemId) return;
         if (itemsDone[itemId]) a.setAttribute('data-mooc-item-completed', 'true');
         else a.removeAttribute('data-mooc-item-completed');
       });
@@ -239,13 +252,24 @@
   }
 
   function refreshModuleCompletion(moduleSlug) {
-    // Auto-segna modulo come completato se tutti gli item presenti nella pagina sono done
-    const itemsInPage = Array.from(document.querySelectorAll('.learn-card-header'))
-      .map(h => h.id)
-      .filter(id => KNOWN_ITEM_ANCHORS.includes(id));
-    if (itemsInPage.length === 0) return;
+    // Auto-segna modulo come completato quando tutti gli item richiesti dal MANIFEST sono done.
+    // Usa il manifest invece degli item presenti nella pagina, perché ora il quiz vive
+    // in una sotto-pagina separata (quiz.html).
+    let requiredIds = [];
+    const manifest = window.MOOC_MANIFEST;
+    if (manifest && manifest.modules) {
+      const mod = manifest.modules.find(m => m.slug === moduleSlug);
+      if (mod && mod.items) requiredIds = mod.items.map(it => it.id);
+    }
+    // Fallback: gli item presenti nella pagina (es. se il manifest non è caricato)
+    if (requiredIds.length === 0) {
+      requiredIds = Array.from(document.querySelectorAll('.learn-card-header'))
+        .map(h => h.id)
+        .filter(id => KNOWN_ITEM_ANCHORS.includes(id));
+    }
+    if (requiredIds.length === 0) return;
     const done = getModuleItems(moduleSlug);
-    const allDone = itemsInPage.every(id => done[id]);
+    const allDone = requiredIds.every(id => done[id]);
     if (allDone) {
       const p = getProgress();
       p[moduleSlug] = p[moduleSlug] || { items: {} };
@@ -253,7 +277,7 @@
         p[moduleSlug].completed = true;
         p[moduleSlug].ts = Date.now();
         saveProgress(p);
-        // Aggiorna anche il checkbox UI
+        // Aggiorna anche il checkbox UI se presente
         const cb = document.getElementById('cb-' + moduleSlug);
         if (cb) {
           cb.checked = true;
@@ -307,9 +331,11 @@
         if (retryBtn) retryBtn.style.display = 'inline-block';
         checkBtn.style.display = 'none';
 
-        // ATTIVITÀ COMPLETATA: aver verificato il quiz
+        // Vincolo rafforzato: quiz completato SOLO se passi con almeno il 60%
         const moduleSlug = container.getAttribute('data-modulo');
-        setItemCompleted(moduleSlug, 'verificare-quiz');
+        if (questions.length > 0 && (correct / questions.length) >= 0.6) {
+          setItemCompleted(moduleSlug, 'verificare-quiz');
+        }
       });
 
       if (retryBtn) {
@@ -364,8 +390,8 @@
         if (prevBtn) prevBtn.disabled = i === 0;
         if (nextBtn) nextBtn.disabled = i === total - 1;
         viewed.add(i);
-        // ATTIVITÀ COMPLETATA: vista almeno l'80% delle carte
-        if (viewed.size >= Math.max(1, Math.ceil(total * 0.8))) {
+        // Vincolo rafforzato: TUTTE le carte viste
+        if (viewed.size >= total) {
           setItemCompleted(moduleSlug, 'ripassare-flashcard');
         }
       }
@@ -395,7 +421,8 @@
         if (prev) prev.disabled = i === 0;
         if (next) next.disabled = i === total - 1;
         viewed.add(i);
-        if (viewed.size >= Math.max(1, Math.ceil(total * 0.8))) {
+        // Vincolo rafforzato: TUTTE le slide viste
+        if (viewed.size >= total) {
           setItemCompleted(moduleSlug, 'guardare-slide');
         }
       }
@@ -471,10 +498,10 @@
       if (audio.__inited) return;
       audio.__inited = true;
       const moduleSlug = currentModuleSlug();
-      // Quando l'audio supera il 70% del totale, segna come completato
+      // Vincolo rafforzato: audio deve raggiungere il 90% (~o ended)
       audio.addEventListener('timeupdate', () => {
         if (!audio.duration) return;
-        if (audio.currentTime / audio.duration >= 0.7) {
+        if (audio.currentTime / audio.duration >= 0.9) {
           setItemCompleted(moduleSlug, 'ascoltare-podcast');
         }
       });
@@ -494,8 +521,8 @@
     function check() {
       if (triggered) return;
       const rect = dispensa.getBoundingClientRect();
-      // Se l'utente ha scrollato a 80% del contenuto della dispensa
-      const scrolledPast = rect.top + rect.height * 0.8 - window.innerHeight;
+      // Vincolo rafforzato: scroll al 95% del contenuto della dispensa
+      const scrolledPast = rect.top + rect.height * 0.95 - window.innerHeight;
       if (scrolledPast <= 0) {
         triggered = true;
         setItemCompleted(moduleSlug, 'leggere-dispensa');
@@ -1006,6 +1033,87 @@
     applyFontStep(getFontStep());
   }
 
+  // ============ EXCLUSIVE PLAYBACK: solo un video/audio alla volta ============
+  // Quando un iframe YouTube va in 'playing', pausa tutti gli altri iframe + l'audio podcast.
+  // Idem viceversa: se parte l'audio podcast, pausa i video YouTube.
+  function postToFrame(iframe, func, args) {
+    try {
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: func, args: args || [] }),
+        '*'
+      );
+    } catch (e) { /* silenzioso */ }
+  }
+  function pauseAllOthers(activeIframe) {
+    document.querySelectorAll('.videotutorial-grid iframe').forEach(f => {
+      if (f !== activeIframe) postToFrame(f, 'pauseVideo');
+    });
+    // Pausa anche l'audio podcast se sta suonando
+    document.querySelectorAll('audio').forEach(a => {
+      if (!a.paused) try { a.pause(); } catch (e) {}
+    });
+  }
+  function pauseAllVideos() {
+    document.querySelectorAll('.videotutorial-grid iframe').forEach(f => {
+      postToFrame(f, 'pauseVideo');
+    });
+  }
+
+  function initExclusivePlayback() {
+    if (window.__exclusivePlaybackInit) return;
+    window.__exclusivePlaybackInit = true;
+
+    // Listener postMessage da YouTube
+    window.addEventListener('message', (e) => {
+      // Solo messaggi da youtube
+      const origin = String(e.origin || '');
+      if (origin.indexOf('youtube') === -1) return;
+      let data;
+      try { data = (typeof e.data === 'string') ? JSON.parse(e.data) : e.data; }
+      catch (ex) { return; }
+      if (!data) return;
+      // YT manda info come { event: 'onStateChange', info: 1 } dove info=1 è "playing"
+      if (data.event === 'onStateChange' && data.info === 1) {
+        // Identifica quale iframe ha originato il play (e.source === iframe.contentWindow)
+        let activeIframe = null;
+        document.querySelectorAll('.videotutorial-grid iframe').forEach(f => {
+          if (f.contentWindow === e.source) activeIframe = f;
+        });
+        if (activeIframe) pauseAllOthers(activeIframe);
+      }
+    }, false);
+
+    // Quando si attivano iframe nuovi, registrali per ricevere eventi
+    function registerIframes() {
+      document.querySelectorAll('.videotutorial-grid iframe').forEach(f => {
+        if (f.__listenerRegistered) return;
+        f.__listenerRegistered = true;
+        // Aspetta che l'iframe sia caricato
+        const sendListen = () => {
+          try {
+            f.contentWindow.postMessage(
+              JSON.stringify({ event: 'listening', id: f.src }),
+              '*'
+            );
+            // YouTube IFrame API: invia 'addEventListener' per onStateChange
+            f.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'addEventListener', args: ['onStateChange'] }),
+              '*'
+            );
+          } catch (e) { /* silenzioso */ }
+        };
+        if (f.contentWindow) sendListen();
+        f.addEventListener('load', sendListen);
+      });
+    }
+    registerIframes();
+
+    // Quando parte l'audio del podcast, pausa tutti i video
+    document.querySelectorAll('audio').forEach(a => {
+      a.addEventListener('play', () => pauseAllVideos());
+    });
+  }
+
   // ============ VIDEOTUTORIAL: tracking visualizzazione ============
   function initVideotutorial() {
     const grid = document.querySelector('.videotutorial-grid');
@@ -1168,6 +1276,7 @@
     initLocalSession();
     initFontSizeToggle();
     initVideotutorial();
+    initExclusivePlayback();
     initPromptLab();
     buildCustomSidebar();
     initQuiz();

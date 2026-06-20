@@ -22,7 +22,8 @@ window.MOOC_MANIFEST = {
         },
         {
           "id": "verificare-quiz",
-          "label": "Verificare · Quiz"
+          "label": "Verificare · Quiz",
+          "href": "quiz.html"
         },
         {
           "id": "ripassare-flashcard",
@@ -60,7 +61,8 @@ window.MOOC_MANIFEST = {
         },
         {
           "id": "verificare-quiz",
-          "label": "Verificare · Quiz"
+          "label": "Verificare · Quiz",
+          "href": "quiz.html"
         },
         {
           "id": "ripassare-flashcard",
@@ -98,7 +100,8 @@ window.MOOC_MANIFEST = {
         },
         {
           "id": "verificare-quiz",
-          "label": "Verificare · Quiz"
+          "label": "Verificare · Quiz",
+          "href": "quiz.html"
         },
         {
           "id": "ripassare-flashcard",
@@ -136,7 +139,8 @@ window.MOOC_MANIFEST = {
         },
         {
           "id": "verificare-quiz",
-          "label": "Verificare · Quiz"
+          "label": "Verificare · Quiz",
+          "href": "quiz.html"
         },
         {
           "id": "ripassare-flashcard",
@@ -174,7 +178,8 @@ window.MOOC_MANIFEST = {
         },
         {
           "id": "verificare-quiz",
-          "label": "Verificare · Quiz"
+          "label": "Verificare · Quiz",
+          "href": "quiz.html"
         },
         {
           "id": "ripassare-flashcard",
