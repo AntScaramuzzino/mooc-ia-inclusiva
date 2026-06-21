@@ -197,5 +197,6 @@ window.MOOC_MANIFEST = {
     }
   ],
   "hasBibliografia": true,
-  "hasQuizFinale": true
+  "hasQuizFinale": true,
+  "hasGlossario": true
 };

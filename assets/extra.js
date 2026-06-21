@@ -210,7 +210,10 @@
       if (!allDone) qItem.style.opacity = '0.7';
       nav.appendChild(qItem);
     }
-    // Bibliografia & Informazioni
+    // Glossario, Bibliografia & Informazioni
+    if (manifest.hasGlossario) {
+      nav.appendChild(topItem('Glossario', prefix + 'glossario.html', {'data-mooc-skip': 'true'}));
+    }
     if (manifest.hasBibliografia) {
       nav.appendChild(topItem('Bibliografia', prefix + 'bibliografia.html', {'data-mooc-skip': 'true'}));
     }

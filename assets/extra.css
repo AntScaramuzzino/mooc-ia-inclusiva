@@ -1558,6 +1558,78 @@ body.mooc-modal-open { overflow: hidden; }
 }
 
 /* ============================================================
+   PAGINA GLOSSARIO DEDICATA
+   ============================================================ */
+.gloss-az-nav {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: 1.4em 0 2em;
+  padding: 1em 1.2em;
+  background: var(--c-bg-soft);
+  border-radius: var(--c-radius-md);
+  border: 1px solid var(--c-border);
+}
+.md-typeset .gloss-az-nav a,
+.gloss-az-nav a {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  background: white;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--c-primary) !important;
+  text-decoration: none !important;
+  font-size: 0.92em;
+  transition: background 0.12s, border-color 0.12s;
+}
+.gloss-az-nav a:hover {
+  background: var(--c-primary);
+  color: white !important;
+  border-color: var(--c-primary);
+}
+.gloss-letter {
+  font-size: 2em !important;
+  color: var(--c-primary) !important;
+  border-bottom: 3px solid var(--c-primary);
+  padding-bottom: 0.2em !important;
+  margin: 1.6em 0 0.6em !important;
+  scroll-margin-top: 70px;
+}
+.gloss-list {
+  margin: 0 0 1.6em;
+}
+.gloss-list dt {
+  font-weight: 700;
+  font-size: 1.05em;
+  color: var(--c-text);
+  margin-top: 1em;
+  scroll-margin-top: 70px;
+}
+.gloss-list dd {
+  margin: 0.3em 0 0.9em 0;
+  line-height: 1.55;
+  color: var(--c-text);
+}
+.gloss-fonte {
+  display: inline-block;
+  font-size: 0.8em;
+  color: var(--c-text-muted);
+  font-style: italic;
+  margin-left: 0.4em;
+}
+[data-md-color-scheme="slate"] .gloss-az-nav {
+  background: #1f2937;
+  border-color: #374151;
+}
+[data-md-color-scheme="slate"] .gloss-az-nav a {
+  background: #111827;
+  border-color: #374151;
+  color: #60a5fa !important;
+}
+[data-md-color-scheme="slate"] .gloss-letter { color: #60a5fa !important; border-color: #60a5fa; }
+
+
+/* ============================================================
    LEGGIBILITÀ DISPENSE — bold + highlighter
    ============================================================ */
 
