@@ -281,10 +281,11 @@ body, .md-typeset {
   padding: 2em 1.5em 4em 1.5em;
   background: var(--c-bg);
 }
-/* Sidebar primaria un po' più stretta per dare spazio al contenuto */
+/* Sidebar primaria un po' più stretta per dare spazio al contenuto.
+   Material gestisce da solo il layout flex sidebar+content: NON aggiungere
+   margin-left su .md-main__inner, sposterebbe l'intero container a destra. */
 @media (min-width: 76.25em) {
   .md-sidebar--primary { width: 13rem; }
-  .md-main__inner { margin-left: 13rem; }
 }
 @media (min-width: 76.25em) {
   .md-content__inner {
