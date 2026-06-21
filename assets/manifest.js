@@ -30,10 +30,6 @@ window.MOOC_MANIFEST = {
           "label": "Ripassare · Flashcard"
         },
         {
-          "id": "consultare-glossario",
-          "label": "Consultare · Glossario"
-        },
-        {
           "id": "scaricare-risorse",
           "label": "Scaricare · Risorse"
         }
@@ -67,10 +63,6 @@ window.MOOC_MANIFEST = {
         {
           "id": "ripassare-flashcard",
           "label": "Ripassare · Flashcard"
-        },
-        {
-          "id": "consultare-glossario",
-          "label": "Consultare · Glossario"
         },
         {
           "id": "scaricare-risorse",
@@ -108,10 +100,6 @@ window.MOOC_MANIFEST = {
           "label": "Ripassare · Flashcard"
         },
         {
-          "id": "consultare-glossario",
-          "label": "Consultare · Glossario"
-        },
-        {
           "id": "scaricare-risorse",
           "label": "Scaricare · Risorse"
         }
@@ -147,10 +135,6 @@ window.MOOC_MANIFEST = {
           "label": "Ripassare · Flashcard"
         },
         {
-          "id": "consultare-glossario",
-          "label": "Consultare · Glossario"
-        },
-        {
           "id": "scaricare-risorse",
           "label": "Scaricare · Risorse"
         }
@@ -184,10 +168,6 @@ window.MOOC_MANIFEST = {
         {
           "id": "ripassare-flashcard",
           "label": "Ripassare · Flashcard"
-        },
-        {
-          "id": "consultare-glossario",
-          "label": "Consultare · Glossario"
         },
         {
           "id": "scaricare-risorse",
