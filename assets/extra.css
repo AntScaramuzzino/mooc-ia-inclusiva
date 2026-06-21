@@ -819,17 +819,24 @@ body.lightbox-open { overflow: hidden; }
 
 /* ============ VIDEOTUTORIAL GRID ============ */
 /* SEMPRE 3 colonne su tutti gli schermi non-mobile.
-   Le card si stringono fino a min 140px (≈ 3 cards in ~440px disponibili)
-   prima di passare a 1 colonna su mobile. */
-.videotutorial-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+   !important per blindare contro regole concorrenti / cache CSS. */
+.videotutorial-grid,
+.md-typeset .videotutorial-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-flow: row;
   gap: 0.8em;
   margin: 1em 0;
   width: 100%;
 }
+.vt-card { min-width: 0; }   /* evita push out-of-grid */
+.vt-embed { min-width: 0; }
 @media (max-width: 560px) {
-  .videotutorial-grid { grid-template-columns: 1fr; gap: 1em; }
+  .videotutorial-grid,
+  .md-typeset .videotutorial-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1em;
+  }
 }
 .vt-card {
   background: var(--c-bg);
