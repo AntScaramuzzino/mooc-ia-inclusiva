@@ -1304,6 +1304,55 @@
     });
   }
 
+  // ============ GLOSSARIO SEARCH (pagina glossario.html) ============
+  function initGlossarioSearch() {
+    const input = document.getElementById('gloss-search');
+    const list = document.getElementById('gloss-list');
+    const count = document.getElementById('gloss-count');
+    if (!input || !list) return;
+
+    const entries = Array.from(list.querySelectorAll('.gloss-entry'));
+    const letters = Array.from(list.querySelectorAll('.gloss-letter'));
+    const total = entries.length;
+
+    function normalize(s) {
+      return (s || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '');  // rimuove accenti
+    }
+
+    function update() {
+      const q = normalize(input.value.trim());
+      if (!q) {
+        entries.forEach(e => e.classList.remove('hidden'));
+        letters.forEach(l => l.classList.remove('hidden'));
+        if (count) count.textContent = total + ' termini';
+        return;
+      }
+      let shown = 0;
+      const lettersWithMatch = new Set();
+      entries.forEach(e => {
+        const term = normalize(e.getAttribute('data-term') || '');
+        const desc = normalize(e.querySelector('.gloss-desc')?.textContent || '');
+        const match = term.includes(q) || desc.includes(q);
+        e.classList.toggle('hidden', !match);
+        if (match) {
+          shown++;
+          // Trova la lettera di appartenenza (h2.gloss-letter precedente)
+          let p = e.previousElementSibling;
+          while (p && !p.classList.contains('gloss-letter')) p = p.previousElementSibling;
+          if (p) lettersWithMatch.add(p.id);
+        }
+      });
+      // Nascondi le lettere senza match
+      letters.forEach(l => l.classList.toggle('hidden', !lettersWithMatch.has(l.id)));
+      if (count) count.textContent = shown + ' su ' + total + ' termini';
+    }
+
+    input.addEventListener('input', update);
+    update();
+  }
+
   // ============ INIT ============
   function init() {
     initLocalSession();
@@ -1311,6 +1360,7 @@
     initVideotutorial();
     initExclusivePlayback();
     initPromptLab();
+    initGlossarioSearch();
     buildCustomSidebar();
     initQuiz();
     initFlashcards();
@@ -1332,4 +1382,24 @@
     init();
   }
   if (window.document$) window.document$.subscribe(init);
+})();
+
+/* ===== Wiki IA a scuola — pulsante nell'header (integrazione wiki) ===== */
+/* Per rimuoverlo: cancella questo blocco da templates/assets/extra.js. */
+(function () {
+  var WIKI_URL = "https://wiki-ia-scuola.vercel.app";
+  function addWikiButton() {
+    var header = document.querySelector(".md-header__inner");
+    if (!header || header.querySelector(".mmc-wiki-link")) return;
+    var a = document.createElement("a");
+    a.className = "md-header__button md-icon mmc-wiki-link";
+    a.href = WIKI_URL; a.target = "_blank"; a.rel = "noopener";
+    a.title = "Wiki — IA nella scuola";
+    a.setAttribute("aria-label", "Apri il Wiki IA nella scuola");
+    a.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2M6 4h5v8l-2.5-1.5L6 12z"/></svg>';
+    header.appendChild(a);
+  }
+  if (window.document$ && typeof window.document$.subscribe === "function") window.document$.subscribe(addWikiButton);
+  else if (document.readyState !== "loading") addWikiButton();
+  else document.addEventListener("DOMContentLoaded", addWikiButton);
 })();
