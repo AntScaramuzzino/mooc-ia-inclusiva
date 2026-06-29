@@ -218,6 +218,9 @@
       nav.appendChild(topItem('Bibliografia', prefix + 'bibliografia.html', {'data-mooc-skip': 'true'}));
     }
     nav.appendChild(topItem('Informazioni', prefix + 'about.html', {'data-mooc-skip': 'true'}));
+    // Wiki esterno — link sempre presente, si apre in nuova scheda
+    const wikiLi = topItem('🌐 Wiki IA a scuola', 'https://wiki-ia-scuola.vercel.app', {'data-mooc-skip': 'true', 'target': '_blank', 'rel': 'noopener'});
+    nav.appendChild(wikiLi);
   }
 
   function refreshSidebar() {
@@ -493,6 +496,30 @@
     document.body.classList.add('lightbox-open');
     lb.focus();
     update();
+  }
+
+  // ============ VIDEO OVERVIEW (HTML5 video.mp4 per modulo) ============
+  // Su MOOC con file video locali (es. Alfabetizzazione IA), ogni modulo
+  // ha un <video src="video.mp4"> nella sezione #vedere-video. Marca come
+  // completato quando il video supera il 90% della sua durata.
+  function initVideoOverview() {
+    const card = document.getElementById('vedere-video');
+    if (!card) return;
+    const video = card.closest('.learn-card')?.querySelector('video')
+               || card.parentElement?.querySelector('video')
+               || document.querySelector('#vedere-video ~ * video');
+    if (!video || video.__overviewBound) return;
+    video.__overviewBound = true;
+    const moduleSlug = currentModuleSlug();
+    video.addEventListener('timeupdate', () => {
+      if (!video.duration) return;
+      if (video.currentTime / video.duration >= 0.9) {
+        setItemCompleted(moduleSlug, 'vedere-video');
+      }
+    });
+    video.addEventListener('ended', () => {
+      setItemCompleted(moduleSlug, 'vedere-video');
+    });
   }
 
   // ============ AUDIO (podcast) ============
@@ -1081,14 +1108,16 @@
     document.querySelectorAll('.videotutorial-grid iframe').forEach(f => {
       if (f !== activeIframe) postToFrame(f, 'pauseVideo');
     });
-    // Pausa anche l'audio podcast se sta suonando
-    document.querySelectorAll('audio').forEach(a => {
-      if (!a.paused) try { a.pause(); } catch (e) {}
+    document.querySelectorAll('audio, video').forEach(m => {
+      if (!m.paused) try { m.pause(); } catch (e) {}
     });
   }
   function pauseAllVideos() {
     document.querySelectorAll('.videotutorial-grid iframe').forEach(f => {
       postToFrame(f, 'pauseVideo');
+    });
+    document.querySelectorAll('video').forEach(v => {
+      if (!v.paused) try { v.pause(); } catch (e) {}
     });
   }
 
@@ -1141,9 +1170,23 @@
     }
     registerIframes();
 
-    // Quando parte l'audio del podcast, pausa tutti i video
+    // Quando parte l'audio podcast OR un video HTML5, pausa gli altri
     document.querySelectorAll('audio').forEach(a => {
       a.addEventListener('play', () => pauseAllVideos());
+    });
+    document.querySelectorAll('video').forEach(v => {
+      v.addEventListener('play', () => {
+        // Pausa altri video HTML5 + iframe YouTube + audio podcast
+        document.querySelectorAll('video').forEach(o => {
+          if (o !== v && !o.paused) try { o.pause(); } catch (e) {}
+        });
+        document.querySelectorAll('.videotutorial-grid iframe').forEach(f => {
+          postToFrame(f, 'pauseVideo');
+        });
+        document.querySelectorAll('audio').forEach(a => {
+          if (!a.paused) try { a.pause(); } catch (e) {}
+        });
+      });
     });
   }
 
@@ -1358,6 +1401,7 @@
     initLocalSession();
     initFontSizeToggle();
     initVideotutorial();
+    initVideoOverview();
     initExclusivePlayback();
     initPromptLab();
     initGlossarioSearch();
@@ -1402,4 +1446,31 @@
   if (window.document$ && typeof window.document$.subscribe === "function") window.document$.subscribe(addWikiButton);
   else if (document.readyState !== "loading") addWikiButton();
   else document.addEventListener("DOMContentLoaded", addWikiButton);
+})();
+
+
+/* ===================== DURABLE FIX: gloss-tooltip (popup glossario non clippato) ===================== */
+(function () {
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
+  ready(function () {
+    var pop = document.getElementById('gloss-pop');
+    if (!pop) { pop = document.createElement('div'); pop.id = 'gloss-pop'; document.body.appendChild(pop); }
+    function show(el){
+      var def = el.getAttribute('data-def'); if(!def) return;
+      pop.textContent = def; pop.classList.add('show');
+      var r = el.getBoundingClientRect();
+      var pw = pop.offsetWidth, ph = pop.offsetHeight;
+      var left = Math.max(8, Math.min(r.left + r.width/2 - pw/2, window.innerWidth - pw - 8));
+      var top = r.top - ph - 8; if (top < 8) top = r.bottom + 8;
+      pop.style.left = left + 'px'; pop.style.top = top + 'px';
+    }
+    function hide(){ pop.classList.remove('show'); }
+    function term(t){ return t && t.closest ? t.closest('.g-term') : null; }
+    document.addEventListener('mouseover', function(e){ var t = term(e.target); if(t) show(t); });
+    document.addEventListener('mouseout', function(e){ if(term(e.target)) hide(); });
+    document.addEventListener('focusin', function(e){ var t = term(e.target); if(t) show(t); });
+    document.addEventListener('focusout', function(e){ if(term(e.target)) hide(); });
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+  });
 })();

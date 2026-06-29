@@ -281,11 +281,11 @@ body, .md-typeset {
   padding: 2em 1.5em 4em 1.5em;
   background: var(--c-bg);
 }
-/* Sidebar primaria un po' più stretta per dare spazio al contenuto.
-   Material gestisce da solo il layout flex sidebar+content: NON aggiungere
-   margin-left su .md-main__inner, sposterebbe l'intero container a destra. */
 @media (min-width: 76.25em) {
   .md-sidebar--primary { width: 13rem; }
+  /* Impedisce che Material applichi margin-left automatico al container principale
+     (comportamento MkDocs Material <9 con sidebar fixed). */
+  .md-main__inner { margin-left: 0 !important; }
 }
 @media (min-width: 76.25em) {
   .md-content__inner {
@@ -1351,16 +1351,8 @@ body.lightbox-open { overflow: hidden; }
   padding: 0.85em 2em !important;
 }
 
-/* Nav link "Quiz finale" con icona lucchetto */
-.md-nav__link[href*="quiz-finale"]::before,
-.mooc-mod-link[href*="quiz-finale"]::before {
-  content: "🔒";
-  margin-right: 0.4em;
-  font-size: 0.95em;
-}
-body[data-quiz-unlocked="true"] .md-nav__link[href*="quiz-finale"]::before {
-  content: "🎓";
-}
+/* Le icone lucchetto/🎓 del quiz finale sono gestite dinamicamente dal JS
+   in buildCustomSidebar(): non servono ::before CSS per evitare il doppio. */
 
 /* ============ AUTH BOX (dentro .mooc-toolbar) ============ */
 .mooc-auth-box {
@@ -2411,3 +2403,20 @@ body.mooc-modal-open { overflow: hidden; }
   .learn-card { break-inside: avoid; border: 1px solid #ccc; }
   .gs-hero, .gs-final-cta, .mooc-toolbar, .mooc-pl-fab, .mooc-pl-drawer { display: none !important; }
 }
+
+
+/* ===== Wiki IA a scuola — stile bottone header ===== */
+.mmc-wiki-link { opacity: 0.8; transition: opacity .2s; }
+.mmc-wiki-link:hover { opacity: 1; }
+.mmc-wiki-link svg { width: 1.2rem; height: 1.2rem; fill: currentColor; }
+
+/* ===================== DURABLE FIX: infografiche + popup non clippato ===================== */
+/* Infografiche/slide a piena larghezza e intere (no riquadro 16:9) */
+.slide-stage{aspect-ratio:auto !important;min-height:0 !important;background:transparent !important;overflow:visible !important;display:block !important}
+.slide-img{width:100% !important;height:auto !important;max-height:none !important;border-radius:8px;border:1px solid var(--c-border,#E5E5E5)}
+/* Popup glossario non clippato dalle tabelle: ::after disattivato, popup #gloss-pop fixed (vedi extra.js) */
+.g-term::after{content:none !important;}
+#gloss-pop{position:fixed;z-index:1000;max-width:320px;background:var(--c-text,#1F1F1F);color:#fff;padding:.7em .9em;border-radius:6px;font-size:.86em;line-height:1.45;font-weight:400;box-shadow:0 6px 24px rgba(0,0,0,.28);pointer-events:none;opacity:0;visibility:hidden;transition:opacity .15s;white-space:normal;text-align:left}
+#gloss-pop.show{opacity:1;visibility:visible}
+/* Testo bianco leggibile sui bottoni primari dentro .md-typeset */
+.md-typeset a.learn-btn-primary,.md-typeset .learn-btn-primary,.md-typeset a.gs-btn-primary,.md-typeset .gs-btn-primary{color:#fff !important;text-decoration:none !important}
