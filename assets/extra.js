@@ -219,7 +219,7 @@
     }
     nav.appendChild(topItem('Informazioni', prefix + 'about.html', {'data-mooc-skip': 'true'}));
     // Wiki esterno — link sempre presente, si apre in nuova scheda
-    const wikiLi = topItem('🌐 Wiki IA a scuola', 'https://wiki-ia-scuola.vercel.app', {'data-mooc-skip': 'true', 'target': '_blank', 'rel': 'noopener'});
+    const wikiLi = topItem('🌐 Wiki IA a scuola', 'https://wikiai.proftecnologia.it', {'data-mooc-skip': 'true', 'target': '_blank', 'rel': 'noopener'});
     nav.appendChild(wikiLi);
   }
 
@@ -1431,7 +1431,7 @@
 /* ===== Wiki IA a scuola — pulsante nell'header (integrazione wiki) ===== */
 /* Per rimuoverlo: cancella questo blocco da templates/assets/extra.js. */
 (function () {
-  var WIKI_URL = "https://wiki-ia-scuola.vercel.app";
+  var WIKI_URL = "https://wikiai.proftecnologia.it";
   function addWikiButton() {
     var header = document.querySelector(".md-header__inner");
     if (!header || header.querySelector(".mmc-wiki-link")) return;

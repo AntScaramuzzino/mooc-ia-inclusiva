@@ -6,7 +6,7 @@
 
    Per attivare il login:
    1. Crea un OAuth 2.0 Web Client su https://console.cloud.google.com
-      (Authorized JavaScript origins: https://mooc-ia-inclusiva.vercel.app)
+      (Authorized JavaScript origins: https://mooc.proftecnologia.it)
       → copia il "Client ID" qui sotto in `clientId`
    2. Deploy l'Apps Script `backend-progress.gs` come Web App
       (Esegui come: io, Accesso: chiunque anche anonimo)
